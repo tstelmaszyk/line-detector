@@ -4,6 +4,7 @@ using namespace cv;
 
 void polyfit(const Mat& src_x, const Mat& src_y, Mat& dst, int order)
 {
+    // Sinon voir : https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#gaa3c25f9fb764b6bef791bf034f6e26f5
     CV_Assert((src_x.rows>0)&&(src_y.rows>0)&&(src_x.cols==1)&&(src_y.cols==1)
             &&(dst.cols==1)&&(dst.rows==(order+1))&&(order>=1));
     Mat X;
@@ -26,6 +27,63 @@ void polyfit(const Mat& src_x, const Mat& src_y, Mat& dst, int order)
     W.copyTo(dst);
 }
 
+
+    /*!
+     *  \brief Step 1: Grayscale
+     *
+     *  First of all, we want to make the image into a grayscale one; only one color channel. 
+     *  This will help us with the identification of edges and corners.
+     *
+     *  \param 
+     */
+void grayscal (const Mat& frame_to_compute, Mat& frame_computed){
+    cv::cvtColor(frame_to_compute,frame_computed,COLOR_RGB2GRAY);
+}
+
+    /*!
+     *  \brief Step 2: Gaussian Blur
+     *
+     *  Adding Gaussian noise to an image, it very useful as it smooths the interpolation between the pixels and is a way 
+     *  to super-pass noise and spurious gradients. Higher the kernel, the more blur the outcome image will be.
+     *
+     *  \param 
+     */
+void gaussian_blur(const Mat& frame_to_compute, Mat& frame_computed){
+    cv::Size kernel_size(5,5) ;
+    GaussianBlur(frame_to_compute,frame_computed,(kernel_size,kernel_size),0);
+}
+
+
+    /*!
+     *  \brief Step 3: Canny Edge Detection
+     *
+     *  Canny Edge Detection offers a way to detect the boundaries of an image. This is done through the gradients of the image.
+     *  The latter is nothing more that a function, where the brightness of each pixel corresponds to the strength of the gradient .
+     *  We will find the edges by tracing the pixels that follow the strongest gradients! As in general the gradients show how rapidly 
+     *  a function changes, an intense density change between the pixels will indicate an edge.
+     *
+     *  \param 
+     */
+void canny_edge_detection(const Mat& frame_to_compute, Mat& frame_computed){
+    double low_threshold = 200;
+    double high_threshold = 300;
+    cv::Canny(frame_to_compute,frame_computed,low_threshold,high_threshold); 
+}
+
+    /*!
+     *  \brief Step 4: Mask a region of interest
+     *
+     *  In the above picture, there are some outliers; some edges from the other part of the road, from the landscape (mountains), etc. 
+     *  As our camera will be fixed, we can put a mask upon the image and keep only these lines that are interesting for our task. 
+     *  Thus, it will be very natural to draw a trapezium in order to keep only an area on where we should expect the road lines to be. 
+     * 
+     *  \param 
+     */
+void mask(const Mat& frame_to_compute, Mat& frame_computed){
+    double low_threshold = 200;
+    double high_threshold = 300;
+    cv::Canny(frame_to_compute,frame_computed,low_threshold,high_threshold); 
+}
 struct RGBColor
 {
     u_int8_t red ;
