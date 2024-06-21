@@ -4,95 +4,6 @@ using namespace cv;
 
 typedef uint16_t DimensionImage ;
 
-
-class RegionOfInterest
-{
-    private :
-    const 
-    DimensionImage width_pix ;
-    DimensionImage height_pix;
-
-    std::vector<Point> pts;
-
-    cv::Point left_top{} ;
-    cv::Point left_bottom{};
-    cv::Point right_top{} ;
-    cv::Point right_bottom{};
- public:
-    RegionOfInterest(const Mat& reference_frame):   width_pix(reference_frame.size().width),
-                                                    height_pix(reference_frame.size().height)
-    {
-        compute_point_coordinates();
-        pts.push_back(left_top);
-        pts.push_back(right_bottom);
-        pts.push_back(left_bottom);
-    };
-    void draw(cv::Mat img)
-    {
-        polylines( img, pts, true, Scalar(0,0,0), 2, 8, 0);
-        cv::imshow("test",img);
-    }
-
-    void mask(cv::Mat img)
-    {
-        cv::Mat final = Mat::zeros(img.size(), CV_8UC3);
-        cv::Mat mask = Mat::zeros(img.size(), CV_8UC1);
-
-        fillPoly(mask, pts, Scalar(255, 255, 255), 8, 0);
-        bitwise_and(img, img, final, mask);
-        imshow("Mask", mask);
-        imshow("Result", final);
-    }
-private: 
-    /*!
-     *  \brief compute_point_coordinates
-     *  (0,0) -- x
-     *  |
-     *  y
-     *  Step 1 : we suppose top points are the same (middle of the picture)
-     */
-    void compute_point_coordinates()
-    {
-        left_top.x = width_pix/2;
-        right_top.x = width_pix/2;
-        
-        left_top.y = height_pix/2;
-        right_top.y = height_pix/2;
-
-        left_bottom.y = height_pix ;
-        right_bottom.y = height_pix ;
-
-        left_bottom.x = 0;
-        right_bottom.x = width_pix;
-
-
-    }
-    void polyfit(const Mat& src_x, const Mat& src_y, Mat& dst, int order)
-        {
-            // Sinon voir : https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#gaa3c25f9fb764b6bef791bf034f6e26f5
-            CV_Assert((src_x.rows>0)&&(src_y.rows>0)&&(src_x.cols==1)&&(src_y.cols==1)
-                    &&(dst.cols==1)&&(dst.rows==(order+1))&&(order>=1));
-            Mat X;
-            X = Mat::zeros(src_x.rows, order+1,CV_32FC1);
-            Mat copy;
-            for(int i = 0; i <=order;i++)
-            {
-                copy = src_x.clone();
-                pow(copy,i,copy);
-                Mat M1 = X.col(i);
-                copy.col(0).copyTo(M1);
-            }
-            Mat X_t, X_inv;
-            transpose(X,X_t);
-            Mat temp = X_t*X;
-            Mat temp2;
-            invert (temp,temp2);
-            Mat temp3 = temp2*X_t;
-            Mat W = temp3*src_y;
-            W.copyTo(dst);
-        }
-};
-
     /*!
      *  \brief Step 1: Grayscale
      *
@@ -144,28 +55,102 @@ void canny_edge_detection(const Mat& frame_to_compute, Mat& frame_computed){
      * 
      *  \param 
      */
-void mask(const Mat& frame_to_compute, Mat& frame_computed){
-}
-struct RGBColor
+class RegionOfInterest
 {
-    u_int8_t red ;
-    u_int8_t green ;
-    u_int8_t blue ;
-    RGBColor(u_int8_t r, u_int8_t g, u_int8_t b):red(r) , green(g) , blue (b) {}
-};
-typedef RGBColor RGBColor;
+    private :
+    const 
+    DimensionImage width_pix ;
+    DimensionImage height_pix;
 
-struct Coordinates2D {
-    float x;
-    float y; 
-    Coordinates2D(unsigned x, unsigned y):x(x),y(y){}
+    std::vector<Point> pts;
+
+    cv::Point left_top{} ;
+    cv::Point left_bottom{};
+    cv::Point right_top{} ;
+    cv::Point right_bottom{};
+ public:
+    RegionOfInterest(const Mat& reference_frame):   width_pix(reference_frame.size().width),
+                                                    height_pix(reference_frame.size().height)
+    {
+        compute_point_coordinates();
+        pts.push_back(left_top);
+        pts.push_back(right_top);
+        pts.push_back(right_bottom);
+        pts.push_back(left_bottom);
+    };
+    void draw(cv::Mat img)
+    {
+        polylines( img, pts, true, Scalar(0,0,0), 2, 8, 0);
+        cv::imshow("test",img);
+    }
+
+    void mask(cv::Mat &img)
+    {
+        cv::Mat final = Mat::zeros(img.size(), CV_8UC3);
+        cv::Mat mask = Mat::zeros(img.size(), CV_8UC1);
+
+        fillPoly(mask, pts, Scalar(255, 255, 255), 8, 0);
+        bitwise_and(img, img, final, mask);
+        imshow("Mask", mask);
+        imshow("Result", final);
+        img = final;
+    }
+private: 
+    /*!
+     *  \brief compute_point_coordinates
+     *  (0,0) -- x
+     *  |
+     *  y
+     *  Step 1 : we suppose top points are the same (middle of the picture)
+     */
+    void compute_point_coordinates()
+    {
+        left_top.x = width_pix/2-width_pix/10;
+        right_top.x = width_pix/2+width_pix/10;
+        
+        left_top.y = height_pix/2 + height_pix/12;
+        right_top.y = height_pix/2 + height_pix/12;
+
+        left_bottom.y = height_pix ;
+        right_bottom.y = height_pix ;
+
+        left_bottom.x = 0;
+        right_bottom.x = width_pix;
+    }
 };
-typedef Coordinates2D Coordinates2D;
+
+    void polyfit(const Mat& src_x, const Mat& src_y, Mat& dst, int order)
+        {
+        // Sinon voir : https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#gaa3c25f9fb764b6bef791bf034f6e26f5
+        CV_Assert((src_x.rows>0)&&(src_y.rows>0));
+        CV_Assert((src_x.cols==1)&&(src_y.cols==1));
+        CV_Assert((dst.cols==1)&&(dst.rows==(order+1))&&(order>=1));
+        Mat X;
+        X = Mat::zeros(src_x.rows, order+1,CV_32FC1);
+        Mat copy;
+        for(int i = 0; i <=order;i++)
+        {
+            copy = src_x.clone();
+            pow(copy,i,copy);
+            Mat M1 = X.col(i);
+            copy.col(0).copyTo(M1);
+        }
+        Mat X_t, X_inv;
+        transpose(X,X_t);
+        Mat temp = X_t*X;
+        Mat temp2;
+        invert (temp,temp2);
+        Mat temp3 = temp2*X_t;
+        Mat W = temp3*src_y;
+        W.copyTo(dst);
+        }
 
 int main(int argc, char** argv )
 {
     cv::Mat image;
+    cv::Mat image2;
     image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteRight.jpg",IMREAD_COLOR);
+    image2 = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteRight.jpg",IMREAD_COLOR);
     if ( !image.data )
     {
         printf("No image data \n");
@@ -185,37 +170,36 @@ int main(int argc, char** argv )
     cv::imshow("Canny",output_canny);
 
     RegionOfInterest test(output_canny);
-    test.draw(output_gray);
-    test.mask(output_gray);
+    test.draw(output_canny);
+    test.mask(output_canny);
 
-    /*
-    cv::Mat output;
-    const RGBColor min_color(200,200,200);
-    const RGBColor max_color(255, 255, 255);
-    cv::inRange(image, 
-                cv::Scalar(min_color.red, min_color.green, min_color.blue), 
-                cv::Scalar(max_color.red, max_color.green, max_color.blue), 
-                output);
-    cv::imshow("output", output);
+    std::vector<Vec4i> lines;
+    HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, 30, 40 );
+    for( size_t i = 0; i < lines.size(); i++ )
+    {
+        if (lines[i][0]<output_canny.size().width/2) //On travaille sur la moitié gauche de l'image 
+        {
+            line( image, Point(lines[i][0], lines[i][1]),
+            Point( lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
+        }
+    }
+    namedWindow( "Detected Lines", 1 );
+    imshow( "Detected Lines", image );
 
 
+    std::vector<Point> pts;
+    for( size_t i = 0; i < lines.size(); i++ )
+    {
+        if (lines[i][0]<output_canny.size().width/2) //On travaille sur la moitié gauche de l'image 
+        {
+            pts.push_back(Point(lines[i][0], lines[i][1]));
+            pts.push_back(Point(lines[i][2], lines[i][3]));
+        }
+    }   
 
-    Coordinates2D left_bottom(100.0,539.0);
-    Coordinates2D right_bottom(950.0,539.0);
-    Coordinates2D apex(480, 290);
-    Mat x_left = (Mat_<float>(2,1) << left_bottom.x, apex.x);
-    Mat y_left = (Mat_<float>(2,1) << left_bottom.y, apex.y);
-    Mat fit_left = (Mat_<float>(2,1) << 0.0, 0.0);
-    polyfit(x_left,y_left,fit_left,1);
-
-    std::cout << "out :" << fit_left.row(0) ;
-    std::cout << "out :" << fit_left.row(1) ;
-    Mat right = (Mat_<double>(2,1) << right_bottom.x, right_bottom.y);
-    Mat top = (Mat_<double>(2,1) << apex.x, apex.y);
-    */
-
+    cv::polylines(image2,pts,1,(0,255,255));
+    namedWindow( "Detected Lines 2", 1 );
+    imshow( "Detected Lines 2", image2 );
     waitKey(0);
-
-
     return 0;
 }
