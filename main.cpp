@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
+#include <math.h>
+
 using namespace cv;
 
 typedef uint16_t DimensionImage ;
@@ -174,10 +176,10 @@ int main(int argc, char** argv )
     test.mask(output_canny);
 
     std::vector<Vec4i> lines;
-    HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, 30, 40 );
+    HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, 10, 40 );
     for( size_t i = 0; i < lines.size(); i++ )
     {
-        if (lines[i][0]<output_canny.size().width/2) //On travaille sur la moitié gauche de l'image 
+        if (lines[i][0]<output_canny.size().width) //On travaille sur la moitié gauche de l'image 
         {
             line( image, Point(lines[i][0], lines[i][1]),
             Point( lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
@@ -186,14 +188,58 @@ int main(int argc, char** argv )
     namedWindow( "Detected Lines", 1 );
     imshow( "Detected Lines", image );
 
+    //Output vector of lines. Each line is represented by a 4-element vector x_1, y_1, x_2, y_2), 
+    //where x_1,y_1)and x_2, y_2)are the ending points of each detected line segment.
+    
+    int vect_x = 0;
+    int vect_y = 0;
+    int vect_x_horizontal = 0;
+    int vect_y_horizontal = 0;
+    int dot_product = 0 ;
+    double norm_vect1 = 0.0;
+    double norm_vect2 = 0.0 ;
+
+    double cos_angle = 0.0 ;
+    double angle = 0.0 ;
+
+    double xa,xb,ya,yb ;
 
     std::vector<Point> pts;
     for( size_t i = 0; i < lines.size(); i++ )
     {
         if (lines[i][0]<output_canny.size().width/2) //On travaille sur la moitié gauche de l'image 
         {
+            
+            //rappl : https://mathsathome.com/wp-content/uploads/2021/12/how-to-find-the-angle-between-two-vectors-1024x581.png
+            
+            /*
+            //vecteur coordinate from points
+            //(xb-xa)(yb-ya)
+            vect_x = lines[i][2] - lines[i][0];
+            vect_y = lines[i][3] - lines[i][1];
+            vect_x_horizontal = lines[i][2] - lines[i][0];
+            vect_y_horizontal = 0;
+            //dot product
+            dot_product = (vect_x * vect_x_horizontal) + (vect_y * vect_y_horizontal);
+            norm_vect1 = sqrt((vect_x*vect_x)+(vect_y*vect_y));
+            norm_vect2 = sqrt((svect_x_horizontal*vect_x_horizontal)+(vect_y_horizontal*vect_y_horizontal));
+            cos_angle = dot_product / (norm_vect1+norm_vect2);
+            angle = acos (cos_angle);
+            std::cout<<angle<<"/"<<dot_product<<"/"<<norm_vect1<<"/"<<norm_vect2<<"/"<<cos_angle<<std::endl ;
+            */
+            xa = lines[i][0] ;
+            ya = lines[i][1] ;
+            xb = lines[i][2] ;
+            yb = lines[i][3] ;
+            cos_angle = (xb-xa) / sqrt( (xb-xa)*(xb-xa)+(yb-ya)*(yb-ya) );
+            angle = acos (cos_angle)*180/CV_PI;
+            std::cout<<angle << std::endl ;
+
+            if (angle > 15)
+            {
             pts.push_back(Point(lines[i][0], lines[i][1]));
             pts.push_back(Point(lines[i][2], lines[i][3]));
+            }
         }
     }   
 
