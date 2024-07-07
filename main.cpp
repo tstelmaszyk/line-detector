@@ -121,31 +121,6 @@ private:
     }
 };
 
-    void polyfit(const Mat& src_x, const Mat& src_y, Mat& dst, int order)
-        {
-        // Sinon voir : https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#gaa3c25f9fb764b6bef791bf034f6e26f5
-        CV_Assert((src_x.rows>0)&&(src_y.rows>0));
-        CV_Assert((src_x.cols==1)&&(src_y.cols==1));
-        CV_Assert((dst.cols==1)&&(dst.rows==(order+1))&&(order>=1));
-        Mat X;
-        X = Mat::zeros(src_x.rows, order+1,CV_32FC1);
-        Mat copy;
-        for(int i = 0; i <=order;i++)
-        {
-            copy = src_x.clone();
-            pow(copy,i,copy);
-            Mat M1 = X.col(i);
-            copy.col(0).copyTo(M1);
-        }
-        Mat X_t, X_inv;
-        transpose(X,X_t);
-        Mat temp = X_t*X;
-        Mat temp2;
-        invert (temp,temp2);
-        Mat temp3 = temp2*X_t;
-        Mat W = temp3*src_y;
-        W.copyTo(dst);
-        }
 
 int main(int argc, char** argv )
 {
