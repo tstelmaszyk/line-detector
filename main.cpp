@@ -60,42 +60,28 @@ void canny_edge_detection(const Mat& frame_to_compute, Mat& frame_computed){
 class RegionOfInterest
 {
     private :
-    const 
-    DimensionImage width_pix ;
-    DimensionImage height_pix;
-
-    std::vector<Point> pts;
-
-    cv::Point left_top{} ;
-    cv::Point left_bottom{};
-    cv::Point right_top{} ;
-    cv::Point right_bottom{};
+    const DimensionImage width_pix ;
+    const DimensionImage height_pix;
+    std::vector<Point> mask_vertex_pts;
+    cv::Mat mask_to_apply  ;
+        
  public:
     RegionOfInterest(const Mat& reference_frame):   width_pix(reference_frame.size().width),
-                                                    height_pix(reference_frame.size().height)
+                                                    height_pix(reference_frame.size().height),
+                                                    mask_to_apply(Mat::zeros(reference_frame.size(), CV_8UC1))
     {
-        compute_point_coordinates();
-        pts.push_back(left_top);
-        pts.push_back(right_top);
-        pts.push_back(right_bottom);
-        pts.push_back(left_bottom);
+        compute_trapeze_point_coordinates(mask_vertex_pts);
+        fillPoly(this->mask_to_apply, mask_vertex_pts, Scalar(255, 255, 255), cv::LINE_8, 0),0;
     };
-    void draw(cv::Mat img)
-    {
-        polylines( img, pts, true, Scalar(0,0,0), 2, 8, 0);
-        cv::imshow("test",img);
-    }
 
-    void mask(cv::Mat &img)
+    /*!
+     *  \brief Mask is applied to the frame sent
+     */
+    void apply_mask(cv::Mat &frame_to_mask)
     {
-        cv::Mat final = Mat::zeros(img.size(), CV_8UC3);
-        cv::Mat mask = Mat::zeros(img.size(), CV_8UC1);
-
-        fillPoly(mask, pts, Scalar(255, 255, 255), 8, 0);
-        bitwise_and(img, img, final, mask);
-        imshow("Mask", mask);
-        imshow("Result", final);
-        img = final;
+        cv::Mat masked_frame = Mat::zeros(frame_to_mask.size(), CV_8UC3);
+        bitwise_and(frame_to_mask, frame_to_mask, masked_frame, this->mask_to_apply);
+        frame_to_mask = masked_frame;
     }
 private: 
     /*!
@@ -105,19 +91,20 @@ private:
      *  y
      *  Step 1 : we suppose top points are the same (middle of the picture)
      */
-    void compute_point_coordinates()
+    void compute_trapeze_point_coordinates(std::vector<Point> &pts)
     {
-        left_top.x = width_pix/2-width_pix/10;
-        right_top.x = width_pix/2+width_pix/10;
-        
-        left_top.y = height_pix/2 - height_pix/6;
-        right_top.y = height_pix/2 - height_pix/6;
-
-        left_bottom.y = height_pix ;
-        right_bottom.y = height_pix ;
-
-        left_bottom.x = 0;
-        right_bottom.x = width_pix;
+        const cv::Point left_top(       width_pix/2-width_pix/10,
+                                        height_pix/2 - height_pix/6) ;
+        const cv::Point left_bottom(    0,
+                                        height_pix) ;
+        const cv::Point right_top(      width_pix/2+width_pix/10,
+                                        height_pix/2 - height_pix/6);
+        const cv::Point right_bottom(   width_pix,
+                                        height_pix);
+        pts.push_back(left_top);
+        pts.push_back(right_top);
+        pts.push_back(right_bottom);
+        pts.push_back(left_bottom);
     }
 };
 
@@ -142,8 +129,8 @@ int main(int argc, char** argv )
 {
     cv::Mat image;
     cv::Mat image2;
-    image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteCurve.jpg",IMREAD_COLOR);
-    image2 = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteCurve.jpg",IMREAD_COLOR);
+    image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidYellowCurve.jpg",IMREAD_COLOR);
+    image2 = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidYellowCurve.jpg",IMREAD_COLOR);
     if ( !image.data )
     {
         printf("No image data \n");
@@ -163,8 +150,7 @@ int main(int argc, char** argv )
     cv::imshow("Canny",output_canny);
 
     RegionOfInterest test(output_canny);
-    test.draw(output_canny);
-    test.mask(output_canny);
+    test.apply_mask(output_canny);
 
     std::vector<Vec4i> lines;
     HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, 10, 40 );
