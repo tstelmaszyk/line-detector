@@ -110,8 +110,8 @@ private:
         left_top.x = width_pix/2-width_pix/10;
         right_top.x = width_pix/2+width_pix/10;
         
-        left_top.y = height_pix/2 + height_pix/12;
-        right_top.y = height_pix/2 + height_pix/12;
+        left_top.y = height_pix/2 - height_pix/6;
+        right_top.y = height_pix/2 - height_pix/6;
 
         left_bottom.y = height_pix ;
         right_bottom.y = height_pix ;
@@ -122,12 +122,28 @@ private:
 };
 
 
+    /*!
+     *  \brief Compute angle angle between line and x-axis
+     * 
+     *  \param Two points in the line
+     */
+double compute_angle_from_two_points (cv::Point point_a, cv::Point point_b) 
+{
+    double cos_angle = 0.0 ;
+    double angle = 0.0 ;
+    const double rad_to_degree = 180/CV_PI ;
+    cos_angle = (point_b.x-point_a.x) / sqrt( (point_b.x-point_a.x)*(point_b.x-point_a.x) + (point_b.y-point_a.y)*(point_b.y-point_a.y) );
+    angle = acos(cos_angle) * rad_to_degree;
+    return angle ;
+}
+
+
 int main(int argc, char** argv )
 {
     cv::Mat image;
     cv::Mat image2;
-    image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteRight.jpg",IMREAD_COLOR);
-    image2 = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteRight.jpg",IMREAD_COLOR);
+    image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteCurve.jpg",IMREAD_COLOR);
+    image2 = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidWhiteCurve.jpg",IMREAD_COLOR);
     if ( !image.data )
     {
         printf("No image data \n");
@@ -166,50 +182,15 @@ int main(int argc, char** argv )
     //Output vector of lines. Each line is represented by a 4-element vector x_1, y_1, x_2, y_2), 
     //where x_1,y_1)and x_2, y_2)are the ending points of each detected line segment.
     
-    int vect_x = 0;
-    int vect_y = 0;
-    int vect_x_horizontal = 0;
-    int vect_y_horizontal = 0;
-    int dot_product = 0 ;
-    double norm_vect1 = 0.0;
-    double norm_vect2 = 0.0 ;
-
-    double cos_angle = 0.0 ;
     double angle = 0.0 ;
-
-    double xa,xb,ya,yb ;
-
     std::vector<Point> pts;
     for( size_t i = 0; i < lines.size(); i++ )
     {
-        if (lines[i][0]<output_canny.size().width/2) //On travaille sur la moitié gauche de l'image 
+        if (lines[i][0]>output_canny.size().width/2) //On travaille sur la moitié droite de l'image 
         {
-            
-            //rappl : https://mathsathome.com/wp-content/uploads/2021/12/how-to-find-the-angle-between-two-vectors-1024x581.png
-            
-            /*
-            //vecteur coordinate from points
-            //(xb-xa)(yb-ya)
-            vect_x = lines[i][2] - lines[i][0];
-            vect_y = lines[i][3] - lines[i][1];
-            vect_x_horizontal = lines[i][2] - lines[i][0];
-            vect_y_horizontal = 0;
-            //dot product
-            dot_product = (vect_x * vect_x_horizontal) + (vect_y * vect_y_horizontal);
-            norm_vect1 = sqrt((vect_x*vect_x)+(vect_y*vect_y));
-            norm_vect2 = sqrt((svect_x_horizontal*vect_x_horizontal)+(vect_y_horizontal*vect_y_horizontal));
-            cos_angle = dot_product / (norm_vect1+norm_vect2);
-            angle = acos (cos_angle);
-            std::cout<<angle<<"/"<<dot_product<<"/"<<norm_vect1<<"/"<<norm_vect2<<"/"<<cos_angle<<std::endl ;
-            */
-            xa = lines[i][0] ;
-            ya = lines[i][1] ;
-            xb = lines[i][2] ;
-            yb = lines[i][3] ;
-            cos_angle = (xb-xa) / sqrt( (xb-xa)*(xb-xa)+(yb-ya)*(yb-ya) );
-            angle = acos (cos_angle)*180/CV_PI;
+            angle = compute_angle_from_two_points(  Point(lines[i][0], lines[i][1]),
+                                                    Point(lines[i][2], lines[i][3]));
             std::cout<<angle << std::endl ;
-
             if (angle > 15)
             {
             pts.push_back(Point(lines[i][0], lines[i][1]));
