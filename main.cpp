@@ -15,7 +15,9 @@ typedef uint16_t DimensionImage ;
      *  \param 
      */
 void grayscal (const Mat& frame_to_compute, Mat& frame_computed){
-    cv::cvtColor(frame_to_compute,frame_computed,COLOR_RGB2GRAY);
+    cv::Mat prov ;
+    bilateralFilter(frame_to_compute,prov,5,250,250);
+    cv::cvtColor(prov,frame_computed,COLOR_RGB2GRAY);
 }
 
     /*!
@@ -27,8 +29,10 @@ void grayscal (const Mat& frame_to_compute, Mat& frame_computed){
      *  \param 
      */
 void gaussian_blur(const Mat& frame_to_compute, Mat& frame_computed){
-    cv::Size kernel_size(5,5) ;
-    GaussianBlur(frame_to_compute,frame_computed,(kernel_size,kernel_size),0);
+    cv::Size kernel_size(35,35) ;
+    //GaussianBlur(frame_to_compute,frame_computed,kernel_size,0);
+    medianBlur(frame_to_compute,frame_computed,13);
+        //bilateralFilter(frame_to_compute,frame_computed,5,250,250);
 }
 
 
@@ -43,9 +47,9 @@ void gaussian_blur(const Mat& frame_to_compute, Mat& frame_computed){
      *  \param 
      */
 void canny_edge_detection(const Mat& frame_to_compute, Mat& frame_computed){
-    const double low_threshold = 200;
-    const double high_threshold = 300;
-    cv::Canny(frame_to_compute,frame_computed,low_threshold,high_threshold); 
+    const double low_threshold = 100;
+    const double high_threshold = 200;
+    cv::Canny(frame_to_compute,frame_computed,low_threshold,high_threshold,3,false); 
 }
 
     /*!
@@ -94,11 +98,11 @@ private:
     void compute_trapeze_point_coordinates(std::vector<Point> &pts)
     {
         const cv::Point left_top(       width_pix/2-width_pix/10,
-                                        height_pix/2 - height_pix/6) ;
+                                        height_pix/2 - height_pix/12) ;
         const cv::Point left_bottom(    0,
                                         height_pix) ;
         const cv::Point right_top(      width_pix/2+width_pix/10,
-                                        height_pix/2 - height_pix/6);
+                                        height_pix/2 - height_pix/12);
         const cv::Point right_bottom(   width_pix,
                                         height_pix);
         pts.push_back(left_top);
@@ -128,9 +132,9 @@ double compute_angle_from_two_points (cv::Point point_a, cv::Point point_b)
 int main(int argc, char** argv )
 {
     cv::Mat image;
-    cv::Mat image2;
-    image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidYellowCurve.jpg",IMREAD_COLOR);
-    image2 = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidYellowCurve.jpg",IMREAD_COLOR);
+    //image = imread("/home/tsvk/Documents/vacap/CarND-LaneLines-P1/test_images/solidYellowCurve.jpg",IMREAD_COLOR);
+
+    image = imread("/home/tsvk/Documents/vacap/img_piste/IMG_0418.jpeg",IMREAD_COLOR);
     if ( !image.data )
     {
         printf("No image data \n");
@@ -139,32 +143,27 @@ int main(int argc, char** argv )
 
     cv::Mat output_gray;
     grayscal(image,output_gray);
+    namedWindow( "output gray", cv::WINDOW_KEEPRATIO);
     cv::imshow("output gray", output_gray);
 
     cv::Mat output_gaussian_blur;
     gaussian_blur(output_gray,output_gaussian_blur);
+    namedWindow( "Gaussian", cv::WINDOW_KEEPRATIO);
     cv::imshow("Gaussian", output_gaussian_blur);
 
     cv::Mat output_canny ;
     canny_edge_detection(output_gaussian_blur,output_canny);
+    namedWindow( "Canny", cv::WINDOW_KEEPRATIO);
     cv::imshow("Canny",output_canny);
 
     RegionOfInterest test(output_canny);
-    test.apply_mask(output_canny);
+    //test.apply_mask(output_canny);
 
     std::vector<Vec4i> lines;
-    HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, 10, 40 );
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
-        if (lines[i][0]<output_canny.size().width) //On travaille sur la moitié gauche de l'image 
-        {
-            line( image, Point(lines[i][0], lines[i][1]),
-            Point( lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
-        }
-    }
-    namedWindow( "Detected Lines", 1 );
-    imshow( "Detected Lines", image );
-
+    int min_line_height = (int)output_canny.size().height / 5 ; 
+    std::cout << min_line_height ; 
+    HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, min_line_height, 80 ); // A tester avec ttes les qualites dimages!!
+    
     //Output vector of lines. Each line is represented by a 4-element vector x_1, y_1, x_2, y_2), 
     //where x_1,y_1)and x_2, y_2)are the ending points of each detected line segment.
     
@@ -172,22 +171,25 @@ int main(int argc, char** argv )
     std::vector<Point> pts;
     for( size_t i = 0; i < lines.size(); i++ )
     {
-        if (lines[i][0]>output_canny.size().width/2) //On travaille sur la moitié droite de l'image 
-        {
+        //if (lines[i][0]<output_canny.size().width/2) //On travaille sur la moitié gauche de l'image 
+        //{
             angle = compute_angle_from_two_points(  Point(lines[i][0], lines[i][1]),
                                                     Point(lines[i][2], lines[i][3]));
-            std::cout<<angle << std::endl ;
-            if (angle > 15)
+
+            std::cout<<angle<<std::endl;                                        
+            if (angle > 40)
             {
             pts.push_back(Point(lines[i][0], lines[i][1]));
             pts.push_back(Point(lines[i][2], lines[i][3]));
+            line( image, Point(lines[i][0], lines[i][1]),
+            Point( lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
+            //std::cout<<angle<<std::endl;
             }
-        }
+        //}
     }   
 
-    cv::polylines(image2,pts,1,(0,255,255));
-    namedWindow( "Detected Lines 2", 1 );
-    imshow( "Detected Lines 2", image2 );
+    namedWindow( "Detected Lines 2", cv::WINDOW_KEEPRATIO);
+    imshow( "Detected Lines 2", image );
     waitKey(0);
     return 0;
 }
