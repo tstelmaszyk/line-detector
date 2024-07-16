@@ -71,16 +71,16 @@ class DetectLines
 {
 
 private :
-    const DimensionImage width_pix ;
-    const DimensionImage height_pix;
+    const DimensionImage width_pixel ;
+    const DimensionImage height_pixel;
 
  public:
-    DetectLines(const Mat& reference_frame):    width_pix(reference_frame.size().width),
-                                                height_pix(reference_frame.size().height)
+    DetectLines(const Mat& reference_frame):    width_pixel(reference_frame.size().width),
+                                                height_pixel(reference_frame.size().height)
     {
     };
 
-    void apply_algo (const Mat& frame_to_compute, Mat& frame_computed)
+    void draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines)
     {
     cv::Mat output_gray;
     grayscal(frame_to_compute,output_gray);
@@ -97,32 +97,8 @@ private :
     //namedWindow( "Canny", cv::WINDOW_KEEPRATIO);
     //cv::imshow("Canny",output_canny);
 
-    frame_computed = frame_to_compute ;
-
-    std::vector<Vec4i> lines;
-    const int min_line_height =  height_pix / 5 ; 
-    HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, min_line_height, 80 ); // A tester avec ttes les qualites dimages!!
-    
-    //Output vector of lines. Each line is represented by a 4-element vector x_1, y_1, x_2, y_2), 
-    //where x_1,y_1)and x_2, y_2)are the ending points of each detected line segment.
-    
-    double angle = 0.0 ;
-    std::vector<Point> pts;
-    for( size_t i = 0; i < lines.size(); i++ )
-    {
-        angle = compute_angle_from_two_points(  Point(lines[i][0], lines[i][1]),
-                                                Point(lines[i][2], lines[i][3]));
-
-        std::cout<<angle<<std::endl;                                        
-        if (angle > 40)
-        {
-        pts.push_back(Point(lines[i][0], lines[i][1]));
-        pts.push_back(Point(lines[i][2], lines[i][3]));
-        line( frame_computed, Point(lines[i][0], lines[i][1]),
-        Point( lines[i][2], lines[i][3]), Scalar(0,0,255), 3, 8 );
-        }
-    }   
-
+    frame_with_lines = frame_to_compute ;
+    hough_lines(output_canny,frame_with_lines);
     }
 
 private :
@@ -180,9 +156,42 @@ private :
         *
         *  \param 
         */
-    void hough_lines(const Mat& frame_to_compute, Mat& frame_computed){
-        //HoughLinesP( output_canny, lines, 1, CV_PI/180, 15, min_line_height, 80 ); // A tester avec ttes les qualites dimages!!
-
+    void hough_lines( const Mat& frame_to_compute,Mat& frame_with_lines_drew){
+        std::vector<Vec4i> lines;
+        double angle = 0.0 ;
+        const double rho = 1 ;
+        const double theta = CV_PI/180 ;
+        const int threshold = 15 ;
+        const double min_line_height =  height_pixel / 5 ;  
+        const double max_line_gap = 80 ;
+        
+        HoughLinesP(    frame_to_compute, 
+                        lines, 
+                        rho, 
+                        theta, 
+                        threshold, 
+                        min_line_height, 
+                        max_line_gap ); //Output vector of lines. Each line is represented by a 4-element vector x_1, y_1, x_2, y_2), 
+                                        //where x_1,y_1)and x_2, y_2)are the ending points of each detected line segment.
+        
+        std::vector<Vec4i>::iterator iter = lines.begin();
+        while (iter != lines.end())
+            {
+                angle = compute_angle_from_two_points(  Point((*iter)[0], (*iter)[1]),
+                                                        Point((*iter)[2], (*iter)[3]));
+                if (angle > 40)
+                {
+                line(   frame_with_lines_drew, 
+                        Point((*iter)[0], (*iter)[1]),
+                        Point((*iter)[2], (*iter)[3]), 
+                        Scalar(0,0,255), 3, 8 );
+                }
+                else
+                {
+                    //lines.erase(iter); segmentation fault when empty ?
+                }
+                ++iter;
+            }
     }
 
         /*!
@@ -220,13 +229,10 @@ int main(int argc, char** argv )
     //test.apply_mask(image);
 
     DetectLines detecteur(image);
-    detecteur.apply_algo(image,image_out);
+    detecteur.draw_lines(image,image_out);
 
-    
-
-
-    namedWindow( "Detected Lines 2", cv::WINDOW_KEEPRATIO);
-    imshow( "Detected Lines 2", image_out );
+    namedWindow( "Detected Lines", cv::WINDOW_KEEPRATIO);
+    imshow( "Detected Lines", image_out );
     waitKey(0);
     return 0;
 }
