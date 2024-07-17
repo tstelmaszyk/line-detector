@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
-project( test )
+project( test_project )
 find_package( OpenCV REQUIRED )
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-add_executable( test main.cpp )
+add_executable( test main.cpp DetectLines.cpp RegionOfInterest.cpp)
 target_link_libraries( test ${OpenCV_LIBS} )
 set_target_properties(test PROPERTIES 
 VS_DEBUGGER_COMMAND_ARGUMENTS "lena.png")
