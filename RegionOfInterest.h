@@ -5,6 +5,8 @@
 #include <opencv2/opencv.hpp>
 #include <math.h>
 #include "projectTypes.h"
+#include "VideoCaracteristics.h"
+
 
 using namespace cv;
 
@@ -19,7 +21,7 @@ using namespace cv;
 class RegionOfInterest
     {
         public:
-            RegionOfInterest(const Mat& reference_frame);
+            RegionOfInterest(const VideoCaracteristics& video_properties);
 
             /*!
             *  \brief Mask is applied to the frame sent
@@ -27,8 +29,7 @@ class RegionOfInterest
             void apply_mask(cv::Mat &frame_to_mask);
 
         private: 
-            const DimensionImage width_pix ;
-            const DimensionImage height_pix;
+            const VideoCaracteristics video_properties ;
             std::vector<Point> mask_vertex_pts;
             cv::Mat mask_to_apply  ;
             

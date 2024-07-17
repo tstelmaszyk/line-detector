@@ -5,18 +5,19 @@
 #include <opencv2/opencv.hpp>
 #include <math.h>
 #include "projectTypes.h"
+#include "VideoCaracteristics.h"
+
 
 using namespace cv;
 
 class DetectLines
     {
         public:
-            DetectLines(const Mat& reference_frame);
+            DetectLines(const VideoCaracteristics& video_properties);
             void draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines);
 
         private :
-            const DimensionImage width_pixel ;
-            const DimensionImage height_pixel;
+            const VideoCaracteristics video_properties ;
 
             /*!
             *  \brief Step 1: Grayscale

@@ -1,7 +1,6 @@
 #include "DetectLines.h"
 
-DetectLines::DetectLines(const Mat& reference_frame):    width_pixel(reference_frame.size().width),
-                                                height_pixel(reference_frame.size().height)
+DetectLines::DetectLines(const VideoCaracteristics& video_properties): video_properties(video_properties)
     {
     };
 
@@ -61,7 +60,7 @@ void DetectLines::hough_lines( const Mat& frame_to_compute,Mat& frame_with_lines
         const double rho = 1 ;
         const double theta = CV_PI/180 ;
         const int threshold = 15 ;
-        const double min_line_height =  height_pixel / 5 ;  
+        const double min_line_height =  video_properties.height_pixel / 5 ;  
         const double max_line_gap = 80 ;
         
         HoughLinesP(    frame_to_compute, 
