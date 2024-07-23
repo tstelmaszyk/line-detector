@@ -5,7 +5,7 @@ RegionOfInterest::RegionOfInterest(const VideoCaracteristics& video_properties):
                                                                                     mask_to_apply(Mat::zeros(video_properties.image_size, CV_8UC1))
     {
         compute_trapeze_point_coordinates(mask_vertex_pts);
-        fillPoly(this->mask_to_apply, mask_vertex_pts, Scalar(255, 255, 255), cv::LINE_8, 0),0;
+        fillPoly(this->mask_to_apply, mask_vertex_pts, Scalar(255, 255, 255), cv::LINE_8, 0);
     }
 
 
