@@ -1,6 +1,7 @@
 #include "DetectLines.h"
 
-DetectLines::DetectLines(const VideoCaracteristics& video_properties): video_properties(video_properties)
+DetectLines::DetectLines(const VideoCaracteristics& video_properties):  video_properties(video_properties), 
+                                                                        mask(video_properties)
     {
     };
 
@@ -22,7 +23,9 @@ void DetectLines::draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines
         //cv::imshow("Canny",output_canny);
 
         frame_with_lines = frame_to_compute ;
+        mask.apply_mask(output_canny);
         hough_lines(output_canny,frame_with_lines);
+        
     }
 
 void DetectLines::grayscal (const Mat& frame_to_compute, Mat& frame_computed)

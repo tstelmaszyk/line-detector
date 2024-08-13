@@ -4,6 +4,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <libcamera/libcamera.h>
+
 #include "DetectLines.h"
 #include "RegionOfInterest.h"
 #include "VideoCaracteristics.h"
@@ -51,25 +53,19 @@ int main(int argc, char** argv )
 
 
 
-    image = imread("/home/tsvk/Documents/vacap/img_piste/IMG_0417.jpeg",IMREAD_COLOR);
-    //image_camera = imread("/home/tsvk/Documents/vacap/test.jpg",IMREAD_COLOR);
+    image = imread("/home/tsvk/Documents/line-detector/img_piste/img2.jpg",IMREAD_COLOR);
     if ( !image.data )
     {
         printf("No image data \n");
         return -1;
     }
 
-    namedWindow( "Camera", cv::WINDOW_KEEPRATIO);
-    imshow( "Camera", image_camera );
 
     VideoCaracteristics video_properties (image);
-    RegionOfInterest test(video_properties);
-    test.apply_mask(image);
-
     DetectLines detecteur(video_properties);
     detecteur.draw_lines(image,image_out);
 
-    namedWindow( "Detected Lines", cv::WINDOW_KEEPRATIO);
+    namedWindow( "Detected Lines", cv::WINDOW_AUTOSIZE);
     imshow( "Detected Lines", image_out );
     waitKey(0);
     return 0;

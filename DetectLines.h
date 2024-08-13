@@ -6,6 +6,7 @@
 #include <math.h>
 #include "projectTypes.h"
 #include "VideoCaracteristics.h"
+#include "RegionOfInterest.h"
 
 
 using namespace cv;
@@ -18,6 +19,7 @@ class DetectLines
 
         private :
             const VideoCaracteristics video_properties ;
+             RegionOfInterest mask;
 
             /*!
             *  \brief Step 1: Grayscale
