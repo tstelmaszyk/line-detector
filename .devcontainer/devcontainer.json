@@ -1,7 +1,7 @@
 // Configuration "Dev Container" pour VS Code.
 // Ce fichier dit a VS Code : "ouvre mon projet A L'INTERIEUR d'un conteneur
 // construit a partir de mon Dockerfile". Editeur, terminal, compilation et
-// debogueur tournent alors dans l'environnement Linux + OpenCV + libcamera.
+// debogueur tournent alors dans l'environnement Linux + OpenCV.
 {
     // Nom affiche en bas a gauche de VS Code quand tu es dans le conteneur.
     "name": "line-detector",

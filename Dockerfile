@@ -3,7 +3,8 @@
 # ---------------------------------------------------------------------
 # Un conteneur part toujours d'une "image de base" : un système Linux
 # minimal. On choisit Debian 12 ("bookworm") car ses dépôts contiennent
-# À LA FOIS OpenCV ET libcamera, les deux dépendances du projet.
+# OpenCV, la dépendance du projet. Le conteneur sert surtout à obtenir un
+# build reproductible, identique à la cible Raspberry Pi.
 # Le suffixe "-slim" = version allégée (moins de paquets inutiles).
 # =====================================================================
 FROM debian:bookworm-slim
@@ -15,9 +16,8 @@ FROM debian:bookworm-slim
 # On installe :
 #   - build-essential : le compilateur C++ (g++), make, etc.
 #   - cmake           : l'outil de build du projet
-#   - pkg-config      : utilisé par CMakeLists.txt pour trouver libcamera
+#   - pkg-config      : utilitaire de résolution de dépendances de build
 #   - libopencv-dev   : OpenCV (en-têtes + libs) -> find_package(OpenCV)
-#   - libcamera-dev   : libcamera (en-têtes + libs)
 #
 # Astuce : on enchaîne update + install + nettoyage dans UN SEUL RUN.
 # Chaque RUN crée une "couche" (layer) dans l'image ; en regroupant et
@@ -28,7 +28,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
         pkg-config \
         libopencv-dev \
-        libcamera-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # =====================================================================

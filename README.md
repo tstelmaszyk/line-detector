@@ -1,6 +1,6 @@
 # line-detector
 
-Détecteur de lignes de voie routière en C++17 (OpenCV + libcamera). L'image
+Détecteur de lignes de voie routière en C++17 (OpenCV). L'image
 d'entrée passe dans un pipeline de vision par ordinateur (gris → flou → contours
 Canny → masque de région d'intérêt → transformée de Hough) et les lignes
 détectées sont dessinées sur l'image de sortie.
@@ -18,13 +18,14 @@ notamment en conteneur.
 
 ## Pourquoi un conteneur ?
 
-Le projet dépend de **libcamera**, une bibliothèque Linux (Raspberry Pi) qui ne
-s'installe pas sur macOS/Windows. Docker fournit un mini-Linux jetable où OpenCV
-et libcamera s'installent proprement, ce qui permet de compiler et d'exécuter le
-projet depuis n'importe quelle machine.
+Le conteneur fournit un **environnement de build reproductible**, identique à la
+cible Raspberry Pi : compilateur, CMake et OpenCV y sont figés à des versions
+connues. On peut ainsi compiler et exécuter le projet depuis n'importe quelle
+machine sans dépendre de ce qui est installé localement, et sans risque d'écart
+entre la machine de dev et la cible.
 
 **Principe directeur :** on *fige* dans l'image ce qui change rarement (compilateur,
-OpenCV, libcamera) et on *monte en volume* ce qui change souvent (images de test,
+OpenCV) et on *monte en volume* ce qui change souvent (images de test,
 et — pendant le développement — le code source). Un *volume* est un dossier
 partagé entre la machine hôte et le conteneur.
 
@@ -85,7 +86,7 @@ docker build -t line-detector .
 ```
 
 `-t line-detector` nomme l'image ; le `.` indique où trouver le `Dockerfile`.
-Grâce au cache de couches, modifier le code ne réinstalle pas OpenCV/libcamera :
+Grâce au cache de couches, modifier le code ne réinstalle pas OpenCV :
 seules les étapes de copie et de compilation sont rejouées.
 
 ### B. Exécuter et récupérer le résultat (via un volume)
@@ -131,7 +132,7 @@ entrer en conflit avec un build local macOS.)
 | `DetectLines.*` | pipeline de détection (gris, flou, Canny, Hough) |
 | `RegionOfInterest.*` | masque trapézoïdal appliqué aux contours |
 | `VideoCaracteristics.h` | géométrie de l'image (dimensions) |
-| `CMakeLists.txt` | configuration de build (OpenCV + libcamera) |
+| `CMakeLists.txt` | configuration de build (OpenCV) |
 | `Dockerfile` / `.dockerignore` | recette du conteneur |
 | `.devcontainer/` | config VS Code Dev Containers |
 | `tools/make_test_image.py` | génère une image de test |

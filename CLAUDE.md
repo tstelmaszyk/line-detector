@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Présentation
 
-Détecteur de lignes de voie routière en C++17, basé sur OpenCV et libcamera. Il
+Détecteur de lignes de voie routière en C++17, basé sur OpenCV. Il
 fait passer une image dans un pipeline classique de vision par ordinateur
 (niveaux de gris → flou → contours Canny → masque de région d'intérêt →
 transformée de Hough probabiliste) et dessine les lignes détectées sur l'image de
-sortie. Il vise une configuration avec caméra Raspberry Pi (libcamera), même si
+sortie. Il vise une configuration avec caméra Raspberry Pi, même si
 `main.cpp` traite actuellement une seule image fixe lue sur le disque.
 
 ## Compilation & exécution
@@ -22,9 +22,8 @@ make
 ./test                 # l'exécutable s'appelle `test`
 ```
 
-Nécessite `OpenCV` (via `find_package`) et `libcamera` (via `pkg-config`) ; les
-deux doivent être installés au niveau système, sinon l'étape de configuration
-CMake échoue.
+Nécessite `OpenCV` (via `find_package`), qui doit être installé au niveau
+système, sinon l'étape de configuration CMake échoue.
 
 Il n'y a ni suite de tests, ni linter, ni CI. Le nom `test` vient de
 `project(test_project)` / `add_executable(test ...)` dans `CMakeLists.txt`.
@@ -83,7 +82,7 @@ de l'image, puis `DetectLines`, puis appeler `draw_lines`.
   conteneur. Le code caméra (`VideoCapture`) a été retiré : il ne servait pas au
   pipeline et empêchait l'exécution hors Raspberry Pi.
 - **Conteneurisation** : `Dockerfile` (base `debian:bookworm-slim`) installe
-  OpenCV + libcamera via apt et compile le projet. Construire avec
+  OpenCV via apt et compile le projet. Construire avec
   `docker build -t line-detector .`, puis exécuter en montant un volume pour
   récupérer la sortie (cf. README/historique). `tools/make_test_image.py` génère
   une image de test `img_piste/img2.jpg` (Pillow).
