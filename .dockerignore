@@ -1,0 +1,5 @@
+# Fichiers/dossiers à NE PAS copier dans le conteneur (équivalent du .gitignore).
+# On exclut le build local (fait pour macOS, inutile dans le conteneur Linux)
+# et l'historique git, pour une copie plus rapide et une image plus légère.
+build/
+.git/

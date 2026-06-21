@@ -1,1 +1,13 @@
+# Dossiers de build (compilation) — regeneres a tout moment, jamais versionnes.
 /build
+/build-linux
+
+# Sorties du programme.
+/out
+output.jpg
+
+# Image de test generee par tools/make_test_image.py (le script, lui, est versionne).
+img_piste/img2.jpg
+
+# Fichier parasite macOS.
+.DS_Store

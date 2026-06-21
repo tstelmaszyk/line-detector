@@ -1,0 +1,44 @@
+// Configuration "Dev Container" pour VS Code.
+// Ce fichier dit a VS Code : "ouvre mon projet A L'INTERIEUR d'un conteneur
+// construit a partir de mon Dockerfile". Editeur, terminal, compilation et
+// debogueur tournent alors dans l'environnement Linux + OpenCV + libcamera.
+{
+    // Nom affiche en bas a gauche de VS Code quand tu es dans le conteneur.
+    "name": "line-detector",
+
+    // On REUTILISE le Dockerfile du projet (pas de duplication de config).
+    //   - dockerfile : chemin du Dockerfile, relatif a CE fichier (.devcontainer/).
+    //   - context    : dossier que Docker peut "voir" pour le build. ".." = la
+    //                   racine du projet (la ou vivent main.cpp, CMakeLists.txt...).
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+
+    // "features" = modules prets a l'emploi ajoutes AU CONTENEUR DE DEV uniquement
+    // (pas a l'image de production). Ici on installe git, l'outil dont le panneau
+    // "Source Control" de VS Code a besoin a l'interieur du conteneur.
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {}
+    },
+
+    // Extensions VS Code installees AUTOMATIQUEMENT dans le conteneur,
+    // pour avoir l'autocompletion C++ et l'integration CMake.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",       // IntelliSense / debogueur C++
+                "ms-vscode.cmake-tools"     // configure + build via l'UI CMake
+            ],
+            "settings": {
+                // Compiler dans un dossier SEPARE de celui de macOS, pour que les
+                // deux caches CMake (Mac et Linux) ne se marchent pas dessus.
+                "cmake.buildDirectory": "${workspaceFolder}/build-linux"
+            }
+        }
+    }
+
+    // (Optionnel, pour plus tard) "postCreateCommand" lancerait une commande
+    // une fois le conteneur cree, ex. generer l'image de test :
+    // "postCreateCommand": "python3 tools/make_test_image.py"
+}
