@@ -6,8 +6,9 @@
 /out
 output.jpg
 
-# Image de test generee par tools/make_test_image.py (le script, lui, est versionne).
-img_piste/img2.jpg
+# Images de test (lourdes / generees) — non versionnees. Le script qui genere
+# une image, tools/make_test_image.py, est versionne, lui.
+img_piste/
 
 # Fichier parasite macOS.
 .DS_Store
