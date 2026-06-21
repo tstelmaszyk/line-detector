@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project( test_project )
+project( line_detector )
 set(CMAKE_CXX_STANDARD 17)
 
 find_package( OpenCV REQUIRED )
@@ -7,7 +7,7 @@ message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-add_executable( test main.cpp DetectLines.cpp RegionOfInterest.cpp)
-target_link_libraries( test ${OpenCV_LIBS} )
-set_target_properties(test PROPERTIES 
+add_executable( line_detector main.cpp DetectLines.cpp RegionOfInterest.cpp)
+target_link_libraries( line_detector ${OpenCV_LIBS} )
+set_target_properties(line_detector PROPERTIES
 VS_DEBUGGER_COMMAND_ARGUMENTS "lena.png")

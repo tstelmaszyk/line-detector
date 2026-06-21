@@ -53,7 +53,7 @@ COPY . /app
 # ---------------------------------------------------------------------
 # On reproduit exactement les étapes décrites dans le CLAUDE.md :
 #   build hors-source, cmake puis make.
-# À la fin, l'exécutable s'appelle "test" et se trouve dans /app/build.
+# À la fin, l'exécutable s'appelle "line_detector" et se trouve dans /app/build.
 # =====================================================================
 RUN mkdir -p build && cd build && cmake .. && make
 
@@ -63,4 +63,4 @@ RUN mkdir -p build && cd build && cmake .. && make
 # CMD = ce qui s'exécute quand on lance le conteneur (docker run).
 # Ici on lance simplement l'exécutable compilé.
 # =====================================================================
-CMD ["./build/test"]
+CMD ["./build/line_detector"]

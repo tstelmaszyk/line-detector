@@ -19,14 +19,14 @@ Build CMake hors-source (`/build` est dans le `.gitignore`) :
 mkdir -p build && cd build
 cmake ..
 make
-./test                 # l'exécutable s'appelle `test`
+./line_detector        # l'exécutable s'appelle `line_detector`
 ```
 
 Nécessite `OpenCV` (via `find_package`), qui doit être installé au niveau
 système, sinon l'étape de configuration CMake échoue.
 
-Il n'y a ni suite de tests, ni linter, ni CI. Le nom `test` vient de
-`project(test_project)` / `add_executable(test ...)` dans `CMakeLists.txt`.
+Il n'y a ni suite de tests, ni linter, ni CI. L'exécutable `line_detector`
+est défini par `add_executable(line_detector ...)` dans `CMakeLists.txt`.
 
 ## Architecture
 
