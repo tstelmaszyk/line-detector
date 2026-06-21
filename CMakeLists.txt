@@ -9,5 +9,3 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 add_executable( line_detector main.cpp DetectLines.cpp RegionOfInterest.cpp)
 target_link_libraries( line_detector ${OpenCV_LIBS} )
-set_target_properties(line_detector PROPERTIES
-VS_DEBUGGER_COMMAND_ARGUMENTS "lena.png")
