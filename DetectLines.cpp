@@ -112,10 +112,12 @@ void DetectLines::hough_lines( const Mat& frame_to_compute,Mat& frame_with_lines
 
 double DetectLines::compute_angle_from_two_points (cv::Point point_a, cv::Point point_b)
     {
-        double cos_angle = 0.0 ;
-        double angle = 0.0 ;
         const double rad_to_degree = 180/CV_PI ;
-        cos_angle = (point_b.x-point_a.x) / sqrt( (point_b.x-point_a.x)*(point_b.x-point_a.x) + (point_b.y-point_a.y)*(point_b.y-point_a.y) );
-        angle = acos(cos_angle) * rad_to_degree;
-        return angle ;
+        const double dx = point_b.x - point_a.x ;
+        const double dy = point_b.y - point_a.y ;
+        if (dx == 0.0 && dy == 0.0)
+        {
+            return 0.0 ; // segment degenere (deux points confondus) : angle indefini
+        }
+        return std::abs(std::atan2(dy, dx)) * rad_to_degree ;
     }
