@@ -1,6 +1,20 @@
 #include "DetectLines.h"
 
-DetectLines::DetectLines(const VideoCaracteristics& video_properties):  video_properties(video_properties), 
+// --- Traces de debug : actives uniquement si compile avec -DLINE_DETECTOR_DEBUG ---
+#ifdef LINE_DETECTOR_DEBUG
+#include <string>
+namespace {
+    void dump(const std::string& name, const cv::Mat& frame)
+    {
+        cv::imwrite("debug_" + name + ".jpg", frame);
+    }
+}
+#define DUMP(name, frame) dump((name), (frame))
+#else
+#define DUMP(name, frame) ((void)0)
+#endif
+
+DetectLines::DetectLines(const VideoCaracteristics& video_properties):  video_properties(video_properties),
                                                                         mask(video_properties)
     {
     };
@@ -9,18 +23,15 @@ void DetectLines::draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines
     {
         cv::Mat output_gray;
         grayscal(frame_to_compute,output_gray);
-        //namedWindow( "output gray", cv::WINDOW_KEEPRATIO);
-        //cv::imshow("output gray", output_gray);
+        DUMP("01_gray", output_gray);
 
         cv::Mat output_gaussian_blur;
         median_blur(output_gray,output_gaussian_blur);
-        //namedWindow( "Gaussian", cv::WINDOW_KEEPRATIO);
-        //cv::imshow("Gaussian", output_gaussian_blur);
+        DUMP("02_blur", output_gaussian_blur);
 
         cv::Mat output_canny ;
         canny_edge_detection(output_gaussian_blur,output_canny);
-        //namedWindow( "Canny", cv::WINDOW_KEEPRATIO);
-        //cv::imshow("Canny",output_canny);
+        DUMP("03_canny", output_canny);
 
         frame_with_lines = frame_to_compute ;
         mask.apply_mask(output_canny);
