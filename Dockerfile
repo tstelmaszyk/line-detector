@@ -57,6 +57,12 @@ COPY . /app
 # =====================================================================
 RUN mkdir -p build && cd build && cmake .. && make
 
+# Le dossier de sortie est code en dur (out/) cote application et cv::imwrite ne
+# le cree pas : on le pre-cree ici pour que le CMD par defaut fonctionne sans
+# montage de volume. En usage reel, monter -v "<hote>/out:/app/out" pour
+# recuperer le resultat sur l'hote.
+RUN mkdir -p out
+
 # =====================================================================
 # 6. COMMANDE PAR DÉFAUT
 # ---------------------------------------------------------------------

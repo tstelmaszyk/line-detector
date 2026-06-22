@@ -36,8 +36,10 @@ int main(int argc, char** argv )
     DiskImageSink result_sink(output_dir);
 
     // Traces du pipeline : disque si debug actif, sinon no-op.
+    // Actif si LINE_DETECTOR_DEBUG est definie ET non vide.
+    const char* debug_env = std::getenv("LINE_DETECTOR_DEBUG");
     std::unique_ptr<ImageSink> debug_sink;
-    if (std::getenv("LINE_DETECTOR_DEBUG") != nullptr)
+    if (debug_env != nullptr && debug_env[0] != '\0')
     {
         debug_sink = std::make_unique<DiskImageSink>(output_dir);
     }
