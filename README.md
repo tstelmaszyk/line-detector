@@ -5,13 +5,20 @@ d'entrée passe dans un pipeline de vision par ordinateur (gris → flou → con
 Canny → masque de région d'intérêt → transformée de Hough) et les lignes
 détectées sont dessinées sur l'image de sortie.
 
-`main.cpp` lit une image sur disque et **écrit le résultat dans un fichier**
+`main.cpp` lit une image sur disque et **écrit le résultat dans `out/output.jpg`**
 (`imwrite`) — pas de fenêtre graphique — afin de pouvoir tourner sans écran,
-notamment en conteneur.
+notamment en conteneur. Le dossier de sortie `out/` est codé en dur et doit
+exister.
 
 ```
-./line_detector <image_entree> <image_sortie>
-# défauts : img_piste/img2.jpg  et  output.jpg
+mkdir -p out
+./line_detector <image_entree>     # défaut : img_piste/img2.jpg  ->  out/output.jpg
+```
+
+**Traces de debug** (optionnel) : exécuter avec `LINE_DETECTOR_DEBUG` non vide
+écrit en plus les étapes intermédiaires dans `out/` :
+```
+LINE_DETECTOR_DEBUG=1 ./line_detector     # out/debug_00_trapeze.jpg … out/debug_03_canny.jpg
 ```
 
 ---
@@ -61,11 +68,12 @@ et aucun rebuild de l'image quand on modifie le code.
    un terminal intégré et compiler/lancer :
 
 ```sh
+mkdir -p out
 cmake -S . -B build-linux && cmake --build build-linux
-./build-linux/line_detector img_piste/img2.jpg output.jpg
+./build-linux/line_detector img_piste/img2.jpg
 ```
 
-`output.jpg` apparaît dans l'explorateur VS Code.
+`out/output.jpg` apparaît dans l'explorateur VS Code.
 
 **Boucle de développement :** éditer le code → `cmake --build build-linux` →
 relancer. Les fichiers sont partagés avec la machine hôte (volume), donc les
@@ -96,7 +104,7 @@ mkdir -p out
 docker run --rm \
   -v "$(pwd)/img_piste:/app/img_piste" \
   -v "$(pwd)/out:/app/out" \
-  line-detector ./build/line_detector img_piste/img2.jpg out/output.jpg
+  line-detector ./build/line_detector img_piste/img2.jpg
 ```
 
 - `--rm` : supprime le conteneur à la fin.
@@ -115,8 +123,9 @@ Monter le code source et compiler dans le conteneur, sans rebuild d'image :
 ```sh
 docker run --rm -it -v "$(pwd):/app" line-detector bash
 # puis, À L'INTÉRIEUR du conteneur :
+mkdir -p out
 cmake -S . -B build-linux && cmake --build build-linux
-./build-linux/line_detector img_piste/img2.jpg output.jpg
+./build-linux/line_detector img_piste/img2.jpg
 ```
 
 (`-it` ouvre un terminal interactif. On compile dans `build-linux/` pour ne pas

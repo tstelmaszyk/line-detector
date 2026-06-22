@@ -61,6 +61,13 @@ Types clés et possession :
   height/2 − height/12).
 - **`projectTypes.h`** — `DimensionImage` est un `typedef uint16_t`, utilisé pour
   les dimensions en pixels partout dans le code.
+- **`ImageSink`** (`ImageSink.h`) — interface `bool save(name, frame)`.
+  `DiskImageSink` écrit dans un dossier (`cv::imwrite`), `NullImageSink` est un
+  no-op. Le résultat final et les traces de debug passent par la même interface,
+  via deux instances : le résultat est toujours `DiskImageSink` ; les traces sont
+  `DiskImageSink` si `LINE_DETECTOR_DEBUG` est défini, sinon `NullImageSink`. Les
+  sinks sont créés dans `main` et injectés par référence dans `DetectLines` puis
+  `RegionOfInterest`.
 
 Ordre de construction dans `main.cpp` : construire `VideoCaracteristics` à partir
 de l'image, puis `DetectLines`, puis appeler `draw_lines`.
@@ -75,12 +82,20 @@ de l'image, puis `DetectLines`, puis appeler `draw_lines`.
   `max_line_gap` de Hough, tailles des noyaux de flou, le filtre d'angle à 40°)
   sont codés en dur en tant que consts locales dans leurs méthodes respectives de
   `DetectLines.cpp`.
-- `main.cpp` lit l'image d'entrée et écrit l'image de sortie via des **chemins
-  passés en arguments** (`argv[1]` entrée, `argv[2]` sortie ; défauts
-  `img_piste/img2.jpg` et `output.jpg`). Le résultat est **écrit sur disque avec
-  `imwrite`** (pas d'`imshow`), pour pouvoir tourner sans écran — notamment en
-  conteneur. Le code caméra (`VideoCapture`) a été retiré : il ne servait pas au
-  pipeline et empêchait l'exécution hors Raspberry Pi.
+- `main.cpp` lit l'image d'entrée via un **chemin passé en argument** (`argv[1]`,
+  défaut `img_piste/img2.jpg`). Le **dossier de sortie est codé en dur** dans
+  `main.cpp` (`out`, source de vérité unique) ; le résultat est écrit sous
+  `out/output.jpg`. L'écriture passe par un **`ImageSink`** injecté (cf.
+  architecture), pas par un `imwrite` direct — pour pouvoir tourner sans écran,
+  notamment en conteneur. `cv::imwrite` ne crée pas le dossier : `out/` doit
+  exister (montage Docker ou `mkdir -p out`). Le code caméra (`VideoCapture`) a
+  été retiré : il ne servait pas au pipeline et empêchait l'exécution hors
+  Raspberry Pi.
+- **Traces de debug** : exécuter avec la variable d'environnement
+  `LINE_DETECTOR_DEBUG` non vide (`LINE_DETECTOR_DEBUG=1 ./line_detector`) écrit
+  les étapes intermédiaires (`out/debug_00_trapeze.jpg` … `out/debug_03_canny.jpg`).
+  Sans la variable, aucune trace n'est écrite (un `NullImageSink` est câblé).
+  C'est un choix **runtime** : il n'y a plus d'option CMake `LINE_DETECTOR_DEBUG`.
 - **Conteneurisation** : `Dockerfile` (base `debian:bookworm-slim`) installe
   OpenCV via apt et compile le projet. Construire avec
   `docker build -t line-detector .`, puis exécuter en montant un volume pour
