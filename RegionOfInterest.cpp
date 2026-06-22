@@ -13,9 +13,10 @@ RegionOfInterest::RegionOfInterest(const VideoCaracteristics& video_properties):
 
 void RegionOfInterest::apply_mask(cv::Mat &frame_to_mask)
     {
-        cv::Mat masked_frame = Mat::zeros(frame_to_mask.size(), CV_8UC3);
-        bitwise_and(frame_to_mask, frame_to_mask, masked_frame, this->mask_to_apply);
-        frame_to_mask = masked_frame;
+        // mask_to_apply vaut 255 dans le trapeze, 0 ailleurs : le ET binaire
+        // garde les contours interieurs (x & 0xFF == x) et annule l'exterieur
+        // (x & 0 == 0). In-place, mono-canal, sans reallocation par frame.
+        bitwise_and(frame_to_mask, this->mask_to_apply, frame_to_mask);
     }
 
 void RegionOfInterest::compute_trapeze_point_coordinates(std::vector<Point> &pts)
