@@ -37,7 +37,7 @@ void DetectLines::draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines
         canny_edge_detection(output_gaussian_blur,output_canny);
         DUMP("03_canny", output_canny);
 
-        frame_with_lines = frame_to_compute ;
+        frame_with_lines = frame_to_compute.clone() ;
         mask.apply_mask(output_canny);
         hough_lines(output_canny,frame_with_lines);
         
@@ -110,7 +110,7 @@ void DetectLines::hough_lines( const Mat& frame_to_compute,Mat& frame_with_lines
             }
     }
 
-double DetectLines::compute_angle_from_two_points (cv::Point point_a, cv::Point point_b) 
+double DetectLines::compute_angle_from_two_points (cv::Point point_a, cv::Point point_b)
     {
         double cos_angle = 0.0 ;
         double angle = 0.0 ;
