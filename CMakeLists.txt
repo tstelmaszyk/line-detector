@@ -7,7 +7,7 @@ message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-add_executable( line_detector main.cpp DetectLines.cpp RegionOfInterest.cpp)
+add_executable( line_detector main.cpp DetectLines.cpp RegionOfInterest.cpp DiskImageSink.cpp)
 target_link_libraries( line_detector ${OpenCV_LIBS} )
 
 # Traces de debug : ecrit chaque etape du pipeline (debug_*.jpg) si active.
