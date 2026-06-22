@@ -1,6 +1,8 @@
 
 #include "RegionOfInterest.h"
 
+#include <opencv2/imgproc.hpp>
+
 RegionOfInterest::RegionOfInterest(const VideoCaracteristics& video_properties):    video_properties(video_properties),
                                                                                     mask_to_apply(Mat::zeros(video_properties.image_size, CV_8UC1))
     {

@@ -1,3 +1,5 @@
-#include <stdio.h>
+#pragma once
+
+#include <cstdint>
 
 typedef uint16_t DimensionImage ;

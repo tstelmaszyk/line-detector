@@ -1,9 +1,6 @@
-#ifndef _detect_lines_h
-#define _detect_lines_h
+#pragma once
 
-#include <stdio.h>
-#include <opencv2/opencv.hpp>
-#include <math.h>
+#include <opencv2/core.hpp>
 #include "projectTypes.h"
 #include "VideoCaracteristics.h"
 #include "RegionOfInterest.h"
@@ -66,4 +63,3 @@ class DetectLines
             */
             double compute_angle_from_two_points (cv::Point point_a, cv::Point point_b) ;
     };
-#endif

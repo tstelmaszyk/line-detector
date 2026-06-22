@@ -1,8 +1,12 @@
 #include "DetectLines.h"
 
+#include <cmath>
+#include <opencv2/imgproc.hpp>
+
 // --- Traces de debug : actives uniquement si compile avec -DLINE_DETECTOR_DEBUG ---
 #ifdef LINE_DETECTOR_DEBUG
 #include <string>
+#include <opencv2/imgcodecs.hpp>
 namespace {
     void dump(const std::string& name, const cv::Mat& frame)
     {

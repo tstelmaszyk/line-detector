@@ -1,8 +1,7 @@
-#ifndef _h_video_carateristics_
-#define _h_video_carateristics_
+#pragma once
 
 #include "projectTypes.h"
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
 
 using namespace cv;
 
@@ -14,10 +13,8 @@ struct VideoCaracteristics{
     VideoCaracteristics(const Mat& reference_frame):    image_size(reference_frame.size()),
                                                         width_pixel(reference_frame.size().width),
                                                         height_pixel(reference_frame.size().height)
-                                                        
+
         {
         }
 
 };
-
-#endif

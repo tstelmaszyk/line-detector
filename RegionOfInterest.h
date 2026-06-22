@@ -1,9 +1,7 @@
-#ifndef _region_of_interest_h
-#define _region_of_interest_h
+#pragma once
 
-#include <stdio.h>
-#include <opencv2/opencv.hpp>
-#include <math.h>
+#include <vector>
+#include <opencv2/core.hpp>
 #include "projectTypes.h"
 #include "VideoCaracteristics.h"
 
@@ -42,5 +40,3 @@ class RegionOfInterest
             */
             void compute_trapeze_point_coordinates(std::vector<Point> &pts);
     };
-
-#endif
