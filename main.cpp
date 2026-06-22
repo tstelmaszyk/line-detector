@@ -4,8 +4,13 @@
 #include "DetectLines.h"
 #include "RegionOfInterest.h"
 #include "VideoCaracteristics.h"
+#include "ImageSink.h"
+#include "DiskImageSink.h"
+#include "NullImageSink.h"
 
+#include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 
 using namespace cv;
@@ -13,10 +18,12 @@ using namespace cv;
 
 int main(int argc, char** argv )
 {
-    // Chemins en arguments (pratique en conteneur) ; valeurs par defaut sinon.
-    //   argv[1] = image d'entree, argv[2] = image de sortie.
-    std::string input_path  = (argc > 1) ? argv[1] : "img_piste/img2.jpg";
-    std::string output_path = (argc > 2) ? argv[2] : "output.jpg";
+    // argv[1] = image d'entree (defaut sinon). Le dossier de sortie est fixe
+    // dans le code ; on n'encombre plus la ligne de commande avec un chemin de
+    // sortie. Les traces de debug s'activent via LINE_DETECTOR_DEBUG (runtime).
+    const std::string input_path = (argc > 1) ? argv[1] : "img_piste/img2.jpg";
+    const std::string output_dir = "out";       // unique source de verite
+    const std::string output_name = "output.jpg";
 
     cv::Mat image = imread(input_path, IMREAD_COLOR);
     if ( !image.data )
@@ -25,17 +32,31 @@ int main(int argc, char** argv )
         return -1;
     }
 
+    // Resultat final : toujours ecrit sur disque.
+    DiskImageSink result_sink(output_dir);
+
+    // Traces du pipeline : disque si debug actif, sinon no-op.
+    std::unique_ptr<ImageSink> debug_sink;
+    if (std::getenv("LINE_DETECTOR_DEBUG") != nullptr)
+    {
+        debug_sink = std::make_unique<DiskImageSink>(output_dir);
+    }
+    else
+    {
+        debug_sink = std::make_unique<NullImageSink>();
+    }
+
     cv::Mat image_out;
     VideoCaracteristics video_properties (image);
-    DetectLines detecteur(video_properties);
+    DetectLines detecteur(video_properties, *debug_sink);
     detecteur.draw_lines(image, image_out);
 
     // Pas de fenetre GUI dans un conteneur : on ecrit le resultat sur disque.
-    if ( !imwrite(output_path, image_out) )
+    if ( !result_sink.save(output_name, image_out) )
     {
-        std::cout << "Impossible d'ecrire l'image de sortie : " << output_path << std::endl;
+        std::cout << "Impossible d'ecrire l'image de sortie : " << output_dir << "/" << output_name << std::endl;
         return -1;
     }
-    std::cout << "Image traitee ecrite dans : " << output_path << std::endl;
+    std::cout << "Image traitee ecrite dans : " << output_dir << "/" << output_name << std::endl;
     return 0;
 }

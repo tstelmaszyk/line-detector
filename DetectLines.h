@@ -4,6 +4,7 @@
 #include "projectTypes.h"
 #include "VideoCaracteristics.h"
 #include "RegionOfInterest.h"
+#include "ImageSink.h"
 
 
 using namespace cv;
@@ -11,11 +12,12 @@ using namespace cv;
 class DetectLines
     {
         public:
-            DetectLines(const VideoCaracteristics& video_properties);
+            DetectLines(const VideoCaracteristics& video_properties, ImageSink& debug_sink);
             void draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines);
 
         private :
             const VideoCaracteristics video_properties ;
+            ImageSink& debug_sink ;
              RegionOfInterest mask;
 
             /*!
