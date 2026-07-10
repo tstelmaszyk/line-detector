@@ -17,6 +17,7 @@ set(LANE_SOURCES
     LaneGeometry.cpp
     LaneMask.cpp
     PerspectiveView.cpp
+    SlidingWindowSearch.cpp
 )
 
 add_executable( line_detector main.cpp ${LANE_SOURCES} )
