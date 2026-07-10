@@ -16,6 +16,7 @@ set(LANE_SOURCES
     LanePolynomial.cpp
     LaneGeometry.cpp
     LaneMask.cpp
+    PerspectiveView.cpp
 )
 
 add_executable( line_detector main.cpp ${LANE_SOURCES} )
