@@ -10,7 +10,7 @@ LaneModel LaneGeometry::compute(LaneModel model,
     const double yMax = static_cast<double>(video.height_pixel) - 1.0;
     const double imageCenterX = static_cast<double>(video.width_pixel) / 2.0;
 
-    // Reconstruction d'un cote manquant par decalage (spec 6.1).
+    // Reconstruction du cote manquant par decalage d'une largeur de voie.
     if (model.left.valid && !model.right.valid && config.defaultLaneWidthPx > 0.0) {
         model.right = model.left;
         model.right.c += config.defaultLaneWidthPx;
@@ -33,6 +33,9 @@ LaneModel LaneGeometry::compute(LaneModel model,
     // Sanite : largeur de voie positive plausible (aléa -> drapeau, pas assert).
     if (xRight - xLeft <= 1.0) {
         model.laneDetected = false;
+        model.lateralOffsetPx = 0.0;
+        model.normalizedOffset = 0.0;
+        model.curvatureRadiusPx = 0.0;
         return model;
     }
 
@@ -46,6 +49,7 @@ LaneModel LaneGeometry::compute(LaneModel model,
     const double a = model.left.a;
     const double b = model.left.b;
     const double denom = std::abs(2.0 * a);
+    // |2a| < 1e-9 -> rayon > ~5e8 px, voie consideree droite
     if (denom < 1e-9) {
         model.curvatureRadiusPx = 1e12; // quasi-droit
     } else {

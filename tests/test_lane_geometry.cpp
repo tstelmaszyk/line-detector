@@ -33,6 +33,9 @@ TEST_CASE("centre de voie a droite du centre image -> offset negatif") {
     REQUIRE(r.laneDetected);
     CHECK(r.lateralOffsetPx < 0.0);
     CHECK(r.normalizedOffset < 0.0);
+    // Valeurs exactes : imageCenter 640 - laneCenter 700 = -60 ; halfWidth 200.
+    CHECK(r.lateralOffsetPx == doctest::Approx(-60.0));
+    CHECK(r.normalizedOffset == doctest::Approx(-0.3));
 }
 
 TEST_CASE("un seul cote valide + defaultLaneWidthPx -> reconstruction") {
