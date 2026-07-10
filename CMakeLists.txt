@@ -11,7 +11,6 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 # On y ajoute chaque nouveau .cpp au fil des tasks.
 set(LANE_SOURCES
     DetectLines.cpp
-    RegionOfInterest.cpp
     DiskImageSink.cpp
     LanePolynomial.cpp
     LaneGeometry.cpp

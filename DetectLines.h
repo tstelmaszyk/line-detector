@@ -1,67 +1,31 @@
 #pragma once
 
 #include <opencv2/core.hpp>
-#include "projectTypes.h"
 #include "VideoCaracteristics.h"
-#include "RegionOfInterest.h"
+#include "LaneConfig.h"
 #include "ImageSink.h"
+#include "LaneModel.h"
+#include "LaneMask.h"
+#include "PerspectiveView.h"
+#include "SlidingWindowSearch.h"
+#include "LaneOverlay.h"
 
+/*!
+*  \brief Orchestre la chaine de detection de voie : masque -> BEV -> fenetres
+*  glissantes -> fit polynomial -> geometrie -> overlay. Renvoie le LaneModel
+*  (signal de pilotage) et dessine le resultat dans frame_with_lines.
+*/
+class DetectLines {
+    public:
+        DetectLines(const VideoCaracteristics& video, const LaneConfig& config, ImageSink& debug_sink);
+        LaneModel draw_lines(const cv::Mat& frame_to_compute, cv::Mat& frame_with_lines);
 
-using namespace cv;
-
-class DetectLines
-    {
-        public:
-            DetectLines(const VideoCaracteristics& video_properties, ImageSink& debug_sink);
-            void draw_lines (const Mat& frame_to_compute, Mat& frame_with_lines);
-
-        private :
-            const VideoCaracteristics video_properties ;
-            ImageSink& debug_sink ;
-             RegionOfInterest mask;
-
-            /*!
-            *  \brief Step 1: Grayscale
-            *  First of all, we want to make the image into a grayscale one; only one color channel. 
-            *  This will help us with the identification of edges and corners.
-            *  \param 
-            */
-            void grayscal (const Mat& frame_to_compute, Mat& frame_computed);
-
-            /*!
-            *  \brief Step 2: Gaussian Blur
-            *  Adding Gaussian noise to an image, it very useful as it smooths the interpolation between the pixels and is a way 
-            *  to super-pass noise and spurious gradients. Higher the kernel, the more blur the outcome image will be.
-            *  https://pyimagesearch.com/2021/04/28/opencv-smoothing-and-blurring/
-            *  \param 
-            */
-            void gaussian_blur(const Mat& frame_to_compute, Mat& frame_computed);
-
-            /*!
-            *  \brief
-            *  \param 
-            */
-            void median_blur(const Mat& frame_to_compute, Mat& frame_computed);
-
-            /*!
-            *  \brief Step 3: Canny Edge Detection
-            *  Canny Edge Detection offers a way to detect the boundaries of an image. This is done through the gradients of the image.
-            *  The latter is nothing more that a function, where the brightness of each pixel corresponds to the strength of the gradient .
-            *  We will find the edges by tracing the pixels that follow the strongest gradients! As in general the gradients show how rapidly 
-            *  a function changes, an intense density change between the pixels will indicate an edge.
-            *  \param 
-            */
-            void canny_edge_detection(const Mat& frame_to_compute, Mat& frame_computed);
-
-            /*!
-            *  \brief
-            *  \param 
-            */
-            void hough_lines( const Mat& frame_to_compute,Mat& frame_with_lines_drew);
-
-            /*!
-            *  \brief Compute angle angle between line and x-axis
-            *  \param Two points in the line
-            */
-            double compute_angle_from_two_points (cv::Point point_a, cv::Point point_b) ;
-    };
+    private:
+        const VideoCaracteristics video_properties;
+        const LaneConfig config;
+        ImageSink& debug_sink;
+        LaneMask mask;
+        PerspectiveView perspective;
+        SlidingWindowSearch search;
+        LaneOverlay overlay;
+};
