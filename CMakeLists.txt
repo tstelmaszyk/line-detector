@@ -14,6 +14,7 @@ set(LANE_SOURCES
     RegionOfInterest.cpp
     DiskImageSink.cpp
     LanePolynomial.cpp
+    LaneGeometry.cpp
 )
 
 add_executable( line_detector main.cpp ${LANE_SOURCES} )
