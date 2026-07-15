@@ -40,7 +40,8 @@ int main(int argc, char** argv)
 
     LaneConfig config;
     // Largeur de voie par defaut (pixels BEV) pour reconstruire un cote manquant.
-    config.defaultLaneWidthPx = static_cast<double>(video_properties.width_pixel) * 0.5;
+    // Approximation grossiere : a calibrer via BEV pour un usage reel.
+    config.defaultLaneWidthPx = static_cast<double>(video_properties.width_pixel) * 0.35;
 
     cv::Mat image_out;
     DetectLines detecteur(video_properties, config, *debug_sink);
@@ -48,7 +49,8 @@ int main(int argc, char** argv)
 
     std::cout << "Voie detectee : " << (model.laneDetected ? "oui" : "non")
               << " | offset normalise : " << model.normalizedOffset
-              << " | rayon : " << model.curvatureRadiusPx << " px" << std::endl;
+              << " | rayon : " << model.curvatureRadiusPx << " px"
+              << " | reconstruit : " << (model.reconstructed ? "oui" : "non") << std::endl;
 
     if (!result_sink.save(output_name, image_out)) {
         std::cout << "Impossible d'ecrire l'image de sortie : "

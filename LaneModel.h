@@ -11,7 +11,8 @@
 struct LaneModel {
     LanePolynomial left;
     LanePolynomial right;
-    bool   laneDetected = false;
+    bool   laneDetected  = false;
+    bool   reconstructed = false; // true si un cote a ete reconstruit par decalage — signal degrade, cf. LaneGeometry
 
     double lateralOffsetPx   = 0.0; // ecart vehicule <-> centre voie, au bas de l'image
     double normalizedOffset  = 0.0; // offset / demi-largeur voie ; <0 = trop a gauche

@@ -20,6 +20,7 @@ TEST_CASE("voie symetrique -> offset nul") {
     REQUIRE(r.laneDetected);
     CHECK(r.lateralOffsetPx == doctest::Approx(0.0));
     CHECK(r.normalizedOffset == doctest::Approx(0.0));
+    CHECK_FALSE(r.reconstructed);
 }
 
 TEST_CASE("centre de voie a droite du centre image -> offset negatif") {
@@ -36,6 +37,7 @@ TEST_CASE("centre de voie a droite du centre image -> offset negatif") {
     // Valeurs exactes : imageCenter 640 - laneCenter 700 = -60 ; halfWidth 200.
     CHECK(r.lateralOffsetPx == doctest::Approx(-60.0));
     CHECK(r.normalizedOffset == doctest::Approx(-0.3));
+    CHECK_FALSE(r.reconstructed);
 }
 
 TEST_CASE("un seul cote valide + defaultLaneWidthPx -> reconstruction") {
@@ -49,6 +51,7 @@ TEST_CASE("un seul cote valide + defaultLaneWidthPx -> reconstruction") {
     REQUIRE(r.laneDetected);
     CHECK(r.right.valid);
     CHECK(r.right.c == doctest::Approx(840.0)); // 440 + 400
+    CHECK(r.reconstructed);
 }
 
 TEST_CASE("aucun cote valide -> laneDetected faux") {

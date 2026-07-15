@@ -36,6 +36,7 @@ void LaneOverlay::render(const cv::Mat& original_bgr, const LaneModel& model, cv
     // Retour en perspective image et fusion.
     cv::Mat lane_img;
     perspective.warpBack(lane_bev, lane_img);
+    // src1==dst est intentionnel et supporte par addWeighted (in-place aliasing OK).
     cv::addWeighted(output, 1.0, lane_img, 0.3, 0.0, output);
 
     // HUD : offset normalise et rayon de courbure.

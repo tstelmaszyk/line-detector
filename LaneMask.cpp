@@ -33,7 +33,7 @@ void LaneMask::compute(const cv::Mat& bgr, cv::Mat& binary)
     cv::Mat sobelx, sobel_abs, sobel_bin;
     cv::Sobel(gray, sobelx, CV_16S, 1, 0, config.sobelKernel);
     cv::convertScaleAbs(sobelx, sobel_abs);
-    cv::inRange(sobel_abs, config.sobelThreshLow, config.sobelThreshHigh, sobel_bin);
+    cv::inRange(sobel_abs, cv::Scalar(config.sobelThreshLow), cv::Scalar(config.sobelThreshHigh), sobel_bin);
 
     // 4. Combinaison OR des trois masques.
     binary = white | yellow | sobel_bin;

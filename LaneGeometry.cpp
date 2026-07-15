@@ -14,9 +14,11 @@ LaneModel LaneGeometry::compute(LaneModel model,
     if (model.left.valid && !model.right.valid && config.defaultLaneWidthPx > 0.0) {
         model.right = model.left;
         model.right.c += config.defaultLaneWidthPx;
+        model.reconstructed = true;
     } else if (model.right.valid && !model.left.valid && config.defaultLaneWidthPx > 0.0) {
         model.left = model.right;
         model.left.c -= config.defaultLaneWidthPx;
+        model.reconstructed = true;
     }
 
     if (!model.left.valid || !model.right.valid) {

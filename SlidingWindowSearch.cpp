@@ -34,7 +34,7 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
     const int nWindows = config.windowCount;
     const int margin   = config.windowMargin;
     const int minPix   = config.windowMinPix;
-    const int winH     = std::max(1, H / nWindows);
+    const int winH     = std::max(1, H / nWindows); // H%nWindows lignes du haut non scannees si H non divisible (sans consequence a 720p)
 
     int leftCur = leftBase, rightCur = rightBase;
 
