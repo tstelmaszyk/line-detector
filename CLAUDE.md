@@ -4,103 +4,162 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Présentation
 
-Détecteur de lignes de voie routière en C++17, basé sur OpenCV. Il
-fait passer une image dans un pipeline classique de vision par ordinateur
-(niveaux de gris → flou → contours Canny → masque de région d'intérêt →
-transformée de Hough probabiliste) et dessine les lignes détectées sur l'image de
-sortie. Il vise une configuration avec caméra Raspberry Pi, même si
-`main.cpp` traite actuellement une seule image fixe lue sur le disque.
+Détecteur de lignes de voie routière en C++17, basé sur OpenCV. Il fait passer
+une image dans un pipeline **vue de dessus (bird's eye view) + ajustement
+polynomial** capable de suivre des lignes **courbes**, et produit un **signal de
+pilotage** (offset latéral normalisé + rayon de courbure) destiné à maintenir un
+véhicule entre les lignes. Il vise une configuration avec caméra Raspberry Pi,
+même si `main.cpp` traite actuellement une seule image fixe lue sur le disque
+(l'architecture est prête pour un flux vidéo — cf. roadmap dans
+`docs/superpowers/specs/`).
 
 ## Compilation & exécution
 
-Build CMake hors-source (`/build` est dans le `.gitignore`) :
+Build CMake hors-source. **OpenCV n'est pas installé sur l'hôte de dev (macOS)** :
+la compilation se fait dans le conteneur Docker (image `line-detector`, base
+`debian:bookworm-slim` + `libopencv-dev`). L'image se construit avec
+`docker build -t line-detector .`.
+
+Compiler l'exécutable et lancer sur une image, en montant la source :
 
 ```sh
-mkdir -p build && cd build
-cmake ..
-make
-./line_detector        # l'exécutable s'appelle `line_detector`
+docker run --rm -v "$(pwd):/app" -w /app line-detector \
+  bash -c 'cmake -S /app -B /tmp/build && cmake --build /tmp/build --target line_detector -j \
+           && mkdir -p /app/out && cd /app && /tmp/build/line_detector img_piste/img2.jpg'
 ```
 
-Nécessite `OpenCV` (via `find_package`), qui doit être installé au niveau
-système, sinon l'étape de configuration CMake échoue.
+Sur une machine où OpenCV est installé au niveau système, le build générique
+fonctionne aussi (`mkdir build && cd build && cmake .. && make`) ; l'exécutable
+s'appelle `line_detector` (`add_executable(line_detector ...)` dans
+`CMakeLists.txt`).
 
-Il n'y a ni suite de tests, ni linter, ni CI. L'exécutable `line_detector`
-est défini par `add_executable(line_detector ...)` dans `CMakeLists.txt`.
+## Tests
+
+Il existe une suite de tests unitaires **doctest** (header unique vendored dans
+`tests/doctest.h`). Cible CMake séparée `line_detector_tests` ; les fichiers
+`tests/test_*.cpp` sont ramassés par `file(GLOB ...)` (un nouveau test est pris en
+compte car le build reconfigure via `cmake -S -B`). Lancer :
+
+```sh
+docker run --rm -v "$(pwd):/app" -w /app line-detector \
+  bash -c 'cmake -S /app -B /tmp/build && cmake --build /tmp/build --target line_detector_tests -j \
+           && /tmp/build/line_detector_tests'
+```
+
+Chaque composant du pipeline a ses tests ; deux tests bout-en-bout
+(`tests/test_integration.cpp`) exercent tout `DetectLines` sur des images
+synthétiques (dont une courbe qui vérifie que le fit n'est pas aplati). Pas de
+linter ni de CI.
 
 ## Architecture
 
 Le pipeline est orchestré par `DetectLines::draw_lines` (`DetectLines.cpp`),
-unique point d'entrée qui enchaîne toutes les étapes dans l'ordre :
+unique point d'entrée. Il **renvoie un `LaneModel`** (le signal de pilotage) et
+dessine le résultat dans l'image de sortie. Étapes, dans l'ordre :
 
-1. `grayscal` — filtre bilatéral puis conversion RGB→gris.
-2. `median_blur` — réduction du bruit (note : `gaussian_blur` existe aussi mais le
-   pipeline appelle actuellement `median_blur`).
-3. `canny_edge_detection` — carte de contours.
-4. `RegionOfInterest::apply_mask` — masque les contours hors d'un trapèze avant
-   Hough, ne gardant que la zone où l'on attend les lignes de voie. **Le masque
-   est appliqué sur les contours Canny, pas sur l'image finale** (cf. historique
-   git — c'est un choix délibéré).
-5. `hough_lines` — `HoughLinesP`, puis filtre les segments par angle
-   (`compute_angle_from_two_points` > 40°) afin de ne dessiner en rouge que les
-   lignes de voie quasi verticales.
+1. **`LaneMask`** (`LaneMask.cpp`) — image binaire des marquages depuis le BGR :
+   blanc (seuil de luminance sur `COLOR_BGR2GRAY`), jaune (`inRange` en HSV),
+   bords (Sobel x), combinés par OU binaire. Remplace l'ancien trio
+   grayscale/flou/Canny. **Utilise `COLOR_BGR2GRAY`** (`imread` charge en BGR).
+2. **`PerspectiveView::toBev`** (`PerspectiveView.cpp`) — warp perspective vers une
+   vue de dessus via `getPerspectiveTransform`. Le quadrilatère source (trapèze
+   dérivé de `VideoCaracteristics` + `LaneConfig`) hérite de la géométrie de
+   l'ancien `RegionOfInterest` ; `warpBack` fait la transformation inverse.
+3. **`SlidingWindowSearch::search`** (`SlidingWindowSearch.cpp`) — histogramme des
+   colonnes (moitié basse) pour trouver les deux bases, puis fenêtres glissantes
+   de bas en haut collectant les pixels gauche/droite (`LanePixels`). Une fenêtre
+   sans assez de pixels ne se recentre pas.
+4. **`LanePolynomial::fit`** (`LanePolynomial.cpp`) — ajuste `x = a·y² + b·y + c`
+   par moindres carrés (`cv::solve`, Vandermonde) pour chaque côté.
+5. **`LaneGeometry::compute`** (`LaneGeometry.cpp`) — remplit le `LaneModel` :
+   centre de voie, offset latéral, offset normalisé, rayon de courbure. Reconstruit
+   un côté manquant par décalage (cf. plus bas).
+6. **`LaneOverlay::render`** (`LaneOverlay.cpp`) — remplit le polygone de voie en
+   BEV, le ramène en perspective image (`warpBack`), le fusionne sur l'image
+   d'origine et ajoute un HUD (offset + courbure).
 
 Types clés et possession :
 
-- **`VideoCaracteristics`** (`VideoCaracteristics.h`) — simple struct contenant
-  `image_size`, `width_pixel`, `height_pixel`, construite à partir d'un `cv::Mat`
-  de référence. C'est la source unique de la géométrie ; `DetectLines` et
-  `RegionOfInterest` la reçoivent par valeur const dans leurs constructeurs. La
-  créer en premier, puis la propager.
-- **`DetectLines`** possède un `RegionOfInterest mask`, tous deux initialisés à
-  partir de la même `VideoCaracteristics`.
-- **`RegionOfInterest`** précalcule une fois le masque trapézoïdal dans son
-  constructeur (`compute_trapeze_point_coordinates` + `fillPoly`) ; `apply_mask`
-  applique ensuite un `bitwise_and` sur chaque image. Les sommets du trapèze
-  dérivent des dimensions de l'image (ex. bord supérieur à width/2 ± width/10,
-  height/2 − height/12).
+- **`VideoCaracteristics`** (`VideoCaracteristics.h`) — struct contenant
+  `image_size`, `width_pixel`, `height_pixel`, construite depuis un `cv::Mat` de
+  référence. Source unique de la géométrie ; propagée par valeur const à chaque
+  composant. La créer en premier.
+- **`LaneConfig`** (`LaneConfig.h`) — struct centralisant **tous** les réglages
+  (seuils blanc/jaune/Sobel, ratios de calibration BEV, fenêtres glissantes,
+  `defaultLaneWidthPx`). Construite dans `main`, injectée par valeur const. C'est
+  le point de réglage unique (notamment la calibration perspective).
+- **`LaneModel`** (`LaneModel.h`) — résultat : deux `LanePolynomial` (gauche/droite,
+  en pixels BEV), `laneDetected`, le signal (`lateralOffsetPx`,
+  `normalizedOffset`, `curvatureRadiusPx`) et `reconstructed`. **Signe de
+  l'offset : négatif = véhicule décalé à gauche.**
+- **`LanePolynomial`** (`LanePolynomial.h`) — polynôme `x = a·y² + b·y + c` avec un
+  drapeau `valid` et une fabrique statique `fit(points, minPoints)`.
+- **`DetectLines`** possède `LaneMask mask`, `PerspectiveView perspective`,
+  `SlidingWindowSearch search`, `LaneOverlay overlay` — tous initialisés depuis la
+  même `VideoCaracteristics`/`LaneConfig`. **`overlay` est déclaré après
+  `perspective`** car il détient une `const PerspectiveView&` (l'ordre de
+  déclaration = ordre de construction).
 - **`projectTypes.h`** — `DimensionImage` est un `typedef uint16_t`, utilisé pour
-  les dimensions en pixels partout dans le code.
+  les dimensions en pixels.
 - **`ImageSink`** (`ImageSink.h`) — interface `bool save(name, frame)`.
   `DiskImageSink` écrit dans un dossier (`cv::imwrite`), `NullImageSink` est un
-  no-op. Le résultat final et les traces de debug passent par la même interface,
-  via deux instances : le résultat est toujours `DiskImageSink` ; les traces sont
-  `DiskImageSink` si `LINE_DETECTOR_DEBUG` est défini, sinon `NullImageSink`. Les
-  sinks sont créés dans `main` et injectés par référence dans `DetectLines` puis
-  `RegionOfInterest`.
+  no-op. Résultat final et traces de debug passent par la même interface : le
+  résultat est toujours `DiskImageSink` ; les traces sont `DiskImageSink` si
+  `LINE_DETECTOR_DEBUG` est défini, sinon `NullImageSink`. Les sinks sont créés
+  dans `main` et injectés par référence dans `DetectLines` puis les composants.
 
-Ordre de construction dans `main.cpp` : construire `VideoCaracteristics` à partir
-de l'image, puis `DetectLines`, puis appeler `draw_lines`.
+Ordre de construction dans `main.cpp` : `VideoCaracteristics` depuis l'image,
+puis `LaneConfig`, puis `DetectLines`, puis `draw_lines` (dont on lit le
+`LaneModel` renvoyé).
+
+## Design by contract
+
+Distinction stricte, appliquée dans tout le pipeline :
+
+- **Violation d'invariant de code** (ne devrait jamais arriver si le code est
+  correct : `Mat` vide, mauvais nombre de canaux, taille ≠ `VideoCaracteristics`,
+  homographie dégénérée, offset non fini) → **`SMART_ASSERT`** (`SmartAssert.h`),
+  macro **toujours active** (non supprimée par `NDEBUG`, contrairement à `assert`).
+- **Aléa de la route** (voie absente, trop peu de pixels, largeur non plausible)
+  → **drapeau** (`LanePolynomial::valid`, `LaneModel::laneDetected`), jamais un
+  assert. Un côté manquant est reconstruit par décalage (`LaneModel::reconstructed`
+  passe à `true` — signal dégradé, à signaler au module de contrôle).
 
 ## Conventions & pièges
 
 - Le code, les commentaires et les messages de commit mélangent **français et
   anglais** ; suivre la langue du fichier environnant.
-- `using namespace cv;` est utilisé dans les en-têtes — `Mat`, `Point`, etc. sont
-  non qualifiés.
-- Les paramètres de réglage (seuils Canny, `threshold`/`min_line_height`/
-  `max_line_gap` de Hough, tailles des noyaux de flou, le filtre d'angle à 40°)
-  sont codés en dur en tant que consts locales dans leurs méthodes respectives de
-  `DetectLines.cpp`.
-- `main.cpp` lit l'image d'entrée via un **chemin passé en argument** (`argv[1]`,
-  défaut `img_piste/img2.jpg`). Le **dossier de sortie est codé en dur** dans
-  `main.cpp` (`out`, source de vérité unique) ; le résultat est écrit sous
-  `out/output.jpg`. L'écriture passe par un **`ImageSink`** injecté (cf.
-  architecture), pas par un `imwrite` direct — pour pouvoir tourner sans écran,
-  notamment en conteneur. `cv::imwrite` ne crée pas le dossier : `out/` doit
-  exister (montage Docker ou `mkdir -p out`). Le code caméra (`VideoCapture`) a
-  été retiré : il ne servait pas au pipeline et empêchait l'exécution hors
-  Raspberry Pi.
-- **Traces de debug** : exécuter avec la variable d'environnement
-  `LINE_DETECTOR_DEBUG` non vide (`LINE_DETECTOR_DEBUG=1 ./line_detector`) écrit
-  les étapes intermédiaires (`out/debug_00_trapeze.jpg` … `out/debug_03_canny.jpg`).
-  Sans la variable, aucune trace n'est écrite (un `NullImageSink` est câblé).
-  C'est un choix **runtime** : il n'y a plus d'option CMake `LINE_DETECTOR_DEBUG`.
+- Le **nouveau code qualifie explicitement `cv::`**. Certains en-têtes hérités
+  contiennent encore `using namespace cv;`.
+- Les réglages ne sont plus des consts éparpillées : ils vivent dans **`LaneConfig`**.
+- `main.cpp` lit l'image d'entrée via un **chemin en argument** (`argv[1]`, défaut
+  `img_piste/img2.jpg`). Le **dossier de sortie est codé en dur** (`out`) ; le
+  résultat est écrit sous `out/output.jpg` via un **`ImageSink`** injecté (pas
+  d'`imwrite` direct — pour tourner sans écran, en conteneur). `cv::imwrite` ne
+  crée pas le dossier : `out/` doit exister (montage Docker ou `mkdir -p out`).
+  `main` fixe `config.defaultLaneWidthPx` (repli grossier ; à caler depuis la
+  calibration BEV pour un usage réel).
+- **Calibration BEV** : les 4 points source dérivent des ratios
+  `srcTopWidthRatio` / `srcTopYRatio` / `bevMarginRatio` de `LaneConfig`. La régler
+  en inspectant `out/debug_02_bev.jpg` jusqu'à ce que des lignes droites
+  parallèles apparaissent verticales et parallèles. **Non bloquant** : les valeurs
+  par défaut fonctionnent (précision géométrique dégradée seulement).
+- **Traces de debug** : exécuter avec `LINE_DETECTOR_DEBUG` non vide
+  (`LINE_DETECTOR_DEBUG=1 ./line_detector`) écrit les étapes intermédiaires :
+  `out/debug_01_mask.jpg`, `debug_02_bev.jpg`, `debug_03_windows.jpg`,
+  `debug_04_fit.jpg`, `debug_05_overlay.jpg`. Sans la variable, aucune trace
+  (`NullImageSink`). Choix **runtime** : pas d'option CMake.
 - **Conteneurisation** : `Dockerfile` (base `debian:bookworm-slim`) installe
-  OpenCV via apt et compile le projet. Construire avec
-  `docker build -t line-detector .`, puis exécuter en montant un volume pour
-  récupérer la sortie (cf. README/historique). `tools/make_test_image.py` génère
-  une image de test `img_piste/img2.jpg` (Pillow).
-- Dans `hough_lines`, la branche `else` ne fait volontairement pas
-  `lines.erase(iter)` — effacer pendant l'itération provoquait un segfault (voir
-  le commentaire inline).
+  OpenCV via apt et compile le projet. `tools/make_test_image.py` (Pillow) génère
+  des images de test dans `img_piste/` : `img2.jpg`, `straight.jpg`, `curved.jpg`,
+  `shifted.jpg`, `dashed.jpg`.
+- **Code retiré** : l'ancien pipeline Canny/Hough (`grayscal`, `median_blur`,
+  `canny_edge_detection`, `hough_lines`, `compute_angle_from_two_points`) et la
+  classe `RegionOfInterest` (son trapèze est absorbé par `PerspectiveView`). Le
+  code caméra (`VideoCapture`) avait déjà été retiré.
+
+## Suite prévue
+
+Voir `docs/superpowers/specs/2026-07-10-roadmap-video-lissage-temporel.md` : mode
+vidéo, `LaneTracker` (lissage temporel / Kalman), recherche autour du fit
+précédent, correction de distorsion caméra, passage métrique.
