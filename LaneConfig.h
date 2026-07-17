@@ -19,9 +19,12 @@ struct LaneConfig {
     int       sobelThreshHigh  = 150;
 
     // --- BEV (PerspectiveView) ---
-    float srcTopWidthRatio = 0.10f;  // demi-largeur du bord haut du quad (fraction de W)
-    float srcTopYRatio     = 0.62f;  // hauteur du bord haut (fraction de H)
-    float bevMarginRatio   = 0.15f;  // marge laterale du rectangle BEV (fraction de W)
+    // Cales sur img_piste/img1.png (vraie image camera) : le bord haut du trapeze
+    // doit remonter vers le point de fuite (~45% de H) pour une vraie vue de dessus.
+    // Regler en inspectant out/debug_02a_trapeze.jpg et out/debug_02b_bev_color.jpg.
+    float srcTopWidthRatio = 0.18f;  // demi-largeur du bord haut du quad (fraction de W)
+    float srcTopYRatio     = 0.45f;  // hauteur du bord haut (fraction de H)
+    float bevMarginRatio   = 0.20f;  // marge laterale du rectangle BEV (fraction de W)
 
     // --- Fenetres glissantes (SlidingWindowSearch) ---
     int windowCount  = 9;
