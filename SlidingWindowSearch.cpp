@@ -45,12 +45,13 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
     for (int w = 0; w < nWindows; ++w) {
         const int yLow  = std::max(0, H - (w + 1) * winH);
         const int yHigh = H - w * winH;
+        const int m     = (w == 0) ? config.firstWindowMargin : margin; // 1re fenetre elargie : rattrape la queue qui part vite en courbe au ras du bas
 
         // Fenetre gauche.
         int sumX = 0, count = 0;
         for (int y = yLow; y < yHigh; ++y) {
             const uchar* row = bev.ptr<uchar>(y);
-            for (int x = std::max(0, leftCur - margin); x < std::min(W, leftCur + margin); ++x)
+            for (int x = std::max(0, leftCur - m); x < std::min(W, leftCur + m); ++x)
                 if (row[x] > 0) { pixels.left.emplace_back(x, y); sumX += x; count++; }
         }
         if (count > minPix) leftCur = sumX / count; // sinon on ne bouge pas
@@ -59,7 +60,7 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
         sumX = 0; count = 0;
         for (int y = yLow; y < yHigh; ++y) {
             const uchar* row = bev.ptr<uchar>(y);
-            for (int x = std::max(0, rightCur - margin); x < std::min(W, rightCur + margin); ++x)
+            for (int x = std::max(0, rightCur - m); x < std::min(W, rightCur + m); ++x)
                 if (row[x] > 0) { pixels.right.emplace_back(x, y); sumX += x; count++; }
         }
         if (count > minPix) rightCur = sumX / count;

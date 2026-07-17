@@ -32,6 +32,7 @@ struct LaneConfig {
     // --- Fenetres glissantes (SlidingWindowSearch) ---
     int   windowCount       = 9;
     int   windowMargin      = 60;
+    int   firstWindowMargin = 100;          // marge elargie de la 1re fenetre (bas) : le champ proche balaie vite en courbe et il n'y a pas d'a priori, une marge normale rate la queue au ras du bas
     int   windowMinPix      = 50;
     float histogramBandRatio = 0.25f;       // fraction basse de H pour l'histogramme de base : petit = ancre la base sur le tout-bas des lignes (les fortes courbures y sont decalees de la moyenne moitie-basse)
 
