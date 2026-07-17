@@ -38,6 +38,14 @@ void LaneMask::compute(const cv::Mat& bgr, cv::Mat& binary)
     cv::convertScaleAbs(sobelx, sobel_abs);
     cv::inRange(sobel_abs, cv::Scalar(config.sobelThreshLow), cv::Scalar(config.sobelThreshHigh), sobel_bin);
 
+    // Le grain de la piste/asphalte est plus grossier dans le champ proche (bas de
+    // l'image) et survit au flou : il noierait le bas du masque de bruit poivre-et-sel.
+    // Le blanc/jaune y sont propres et suffisent, donc on ne garde le Sobel que dans
+    // le champ lointain (haut), la ou les marquages sont fins/peu contrastes.
+    const int sobelCutoff = static_cast<int>(config.sobelNearCutoffRatio * sobel_bin.rows);
+    if (sobelCutoff >= 0 && sobelCutoff < sobel_bin.rows)
+        sobel_bin.rowRange(sobelCutoff, sobel_bin.rows).setTo(0);
+
     // 4. Combinaison OR des trois masques, puis ouverture morpho pour effacer les mouchetures isolees.
     binary = white | yellow | sobel_bin;
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, {config.morphKernel, config.morphKernel});

@@ -18,6 +18,7 @@ struct LaneConfig {
     int       sobelKernel      = 3;
     int       sobelThreshLow   = 80;
     int       sobelThreshHigh  = 150;
+    float     sobelNearCutoffRatio = 0.6f;  // Sobel ignore sous cette fraction de H : dans le champ proche (bas) le grain domine et survit au flou, le blanc/jaune y suffisent
     int       morphKernel      = 3;         // ouverture morpho du masque final : efface les mouchetures (impair)
 
     // --- BEV (PerspectiveView) ---
@@ -29,9 +30,10 @@ struct LaneConfig {
     float bevMarginRatio   = 0.20f;  // marge laterale du rectangle BEV (fraction de W)
 
     // --- Fenetres glissantes (SlidingWindowSearch) ---
-    int windowCount  = 9;
-    int windowMargin = 60;
-    int windowMinPix = 50;
+    int   windowCount       = 9;
+    int   windowMargin      = 60;
+    int   windowMinPix      = 50;
+    float histogramBandRatio = 0.25f;       // fraction basse de H pour l'histogramme de base : petit = ancre la base sur le tout-bas des lignes (les fortes courbures y sont decalees de la moyenne moitie-basse)
 
     // --- Reconstruction / sanite (LaneGeometry) ---
     double defaultLaneWidthPx = 0.0; // 0 = pas de reconstruction du cote manquant

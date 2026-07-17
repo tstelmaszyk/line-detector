@@ -17,9 +17,13 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
     const int H = bev.rows;
     const int W = bev.cols;
 
-    // Histogramme des colonnes sur la moitie basse.
+    // Histogramme des colonnes sur une bande basse etroite : la base doit refleter
+    // la position des lignes au TOUT-BAS (ou commence la 1re fenetre). Sur une moitie
+    // basse, une ligne fortement courbee balaie horizontalement et l'argmax tombe
+    // au-dessus du bas reel, decalant la 1re fenetre a cote des pixels du ras du bas.
+    const int histTop = std::max(0, H - static_cast<int>(config.histogramBandRatio * H));
     std::vector<int> hist(W, 0);
-    for (int y = H / 2; y < H; ++y) {
+    for (int y = histTop; y < H; ++y) {
         const uchar* row = bev.ptr<uchar>(y);
         for (int x = 0; x < W; ++x) if (row[x] > 0) hist[x]++;
     }
