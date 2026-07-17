@@ -30,13 +30,18 @@ void LaneMask::compute(const cv::Mat& bgr, cv::Mat& binary)
                 yellow);
 
     // 3. Gradient horizontal (Sobel x) : renforce les bords de marquage.
+    //    Flou prealable pour ne pas reagir a la texture haute-frequence de l'asphalte.
+    cv::Mat grayBlur;
+    cv::GaussianBlur(gray, grayBlur, cv::Size(config.blurKernel, config.blurKernel), 0);
     cv::Mat sobelx, sobel_abs, sobel_bin;
-    cv::Sobel(gray, sobelx, CV_16S, 1, 0, config.sobelKernel);
+    cv::Sobel(grayBlur, sobelx, CV_16S, 1, 0, config.sobelKernel);
     cv::convertScaleAbs(sobelx, sobel_abs);
     cv::inRange(sobel_abs, cv::Scalar(config.sobelThreshLow), cv::Scalar(config.sobelThreshHigh), sobel_bin);
 
-    // 4. Combinaison OR des trois masques.
+    // 4. Combinaison OR des trois masques, puis ouverture morpho pour effacer les mouchetures isolees.
     binary = white | yellow | sobel_bin;
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, {config.morphKernel, config.morphKernel});
+    cv::morphologyEx(binary, binary, cv::MORPH_OPEN, kernel);
 
     SMART_ASSERT(binary.type() == CV_8UC1, "LaneMask: sortie non binaire mono-canal");
     debug_sink.save("debug_01_mask.jpg", binary);

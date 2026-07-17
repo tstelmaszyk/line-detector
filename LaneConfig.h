@@ -14,9 +14,11 @@ struct LaneConfig {
     // --- Seuillage (LaneMask) ---
     int       whiteThreshold  = 200;        // luminance mini du marquage blanc
     cv::Vec2i yellowHue        = {15, 35};  // plage de teinte jaune (HSV)
+    int       blurKernel       = 5;         // flou avant Sobel : tue la texture asphalte (impair)
     int       sobelKernel      = 3;
-    int       sobelThreshLow   = 30;
+    int       sobelThreshLow   = 80;
     int       sobelThreshHigh  = 150;
+    int       morphKernel      = 3;         // ouverture morpho du masque final : efface les mouchetures (impair)
 
     // --- BEV (PerspectiveView) ---
     // Cales sur img_piste/img1.png (vraie image camera) : le bord haut du trapeze
