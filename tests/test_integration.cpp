@@ -1,92 +1,106 @@
 #include "doctest.h"
-#include "DetectLines.h"
-#include "LaneConfig.h"
-#include "VideoCaracteristics.h"
-#include "NullImageSink.h"
-#include "SlidingWindowSearch.h"
-#include "LanePolynomial.h"
+
 #include <opencv2/imgproc.hpp>
+
 #include <cmath>
 
-static cv::Mat makeLaneImage(int W, int H, int leftX, int rightX) {
-    cv::Mat img(H, W, CV_8UC3, cv::Scalar(110, 110, 110));
-    cv::line(img, {leftX,  H - 1}, {leftX,  H / 2}, cv::Scalar(255, 255, 255), 14);
-    cv::line(img, {rightX, H - 1}, {rightX, H / 2}, cv::Scalar(255, 255, 255), 14);
-    return img;
+#include "DetectLines.h"
+#include "LaneConfig.h"
+#include "LanePolynomial.h"
+#include "NullImageSink.h"
+#include "SlidingWindowSearch.h"
+#include "VideoCaracteristics.h"
+
+static ::cv::Mat make_lane_image( int width, int height, int left_x, int right_x )
+{
+  ::cv::Mat img( height, width, CV_8UC3, ::cv::Scalar( 110, 110, 110 ) );
+  ::cv::line( img, { left_x, height - 1 }, { left_x, height / 2 }, ::cv::Scalar( 255, 255, 255 ), 14 );
+  ::cv::line( img, { right_x, height - 1 }, { right_x, height / 2 }, ::cv::Scalar( 255, 255, 255 ), 14 );
+  return img;
 }
 
-// Entree miroir-symetrique autour de x=W/2 + transform symetrique -> offset ~ 0.
-TEST_CASE("pipeline complet : voie symetrique -> offset proche de zero") {
-    const int W = 1280, H = 720;
-    cv::Mat img = makeLaneImage(W, H, 440, 840); // symetrique autour de 640
-    VideoCaracteristics video(img);
-    LaneConfig config;
-    config.default_lane_width_px = W * 0.5;
-    NullImageSink sink;
-    DetectLines det(video, config, sink);
+TEST_CASE( "pipeline complet : voie symetrique -> offset proche de zero" )
+{
+  const int width = 1280;
+  const int height = 720;
+  ::cv::Mat img = make_lane_image( width, height, 440, 840 );
+  VideoCaracteristics video( img );
+  LaneConfig config;
+  config.default_lane_width_px = width * 0.5;
+  NullImageSink sink;
+  DetectLines detector( video, config, sink );
 
-    cv::Mat out;
-    const LaneModel m = det.draw_lines(img, out);
-    REQUIRE(m.lane_detected);
-    CHECK(std::abs(m.normalized_offset) < 0.15);
+  ::cv::Mat out;
+  const LaneModel model = detector.draw_lines( img, out );
+
+  REQUIRE( model.lane_detected );
+  CHECK( ::std::abs( model.normalized_offset ) < 0.15 );
 }
 
-// Voie decalee a droite -> centre de voie a droite du centre image -> offset < 0.
-TEST_CASE("pipeline complet : voie decalee a droite -> offset negatif") {
-    const int W = 1280, H = 720;
-    cv::Mat img = makeLaneImage(W, H, 540, 940); // decalee +100
-    VideoCaracteristics video(img);
-    LaneConfig config;
-    config.default_lane_width_px = W * 0.5;
-    NullImageSink sink;
-    DetectLines det(video, config, sink);
+TEST_CASE( "pipeline complet : voie decalee a droite -> offset negatif" )
+{
+  const int width = 1280;
+  const int height = 720;
+  ::cv::Mat img = make_lane_image( width, height, 540, 940 );
+  VideoCaracteristics video( img );
+  LaneConfig config;
+  config.default_lane_width_px = width * 0.5;
+  NullImageSink sink;
+  DetectLines detector( video, config, sink );
 
-    cv::Mat out;
-    const LaneModel m = det.draw_lines(img, out);
-    REQUIRE(m.lane_detected);
-    CHECK(m.normalized_offset < 0.0);
+  ::cv::Mat out;
+  const LaneModel model = detector.draw_lines( img, out );
+
+  REQUIRE( model.lane_detected );
+  CHECK( model.normalized_offset < 0.0 );
 }
 
-// Voie courbe (BEV binaire) : verifie que SlidingWindowSearch + fit suivent
-// la courbure sans l'aplatir.
-// Courbe : x = base + K*(H-1-y)^2, courbure positive (stripes courbees vers la droite
-// en montant). K=0.0003 donne ~155 px de decalage au sommet -> terme quadratique
-// bien au-dessus du bruit.
-TEST_CASE("recherche + fit sur voie courbe -> terme quadratique non nul") {
-    const int W = 1280, H = 720;
-    const double K       = 3e-4;  // courbure ; a attendu > 0
-    const int leftBase   = 300;   // dans [0, W/2)
-    const int rightBase  = 900;   // dans [W/2, W)
-    const int stripeHalf = 8;     // demi-largeur de la stripe en pixels
+TEST_CASE( "recherche + fit sur voie courbe -> terme quadratique non nul" )
+{
+  const int width = 1280;
+  const int height = 720;
+  const double curvature = 3e-4;
+  const int left_base = 300;
+  const int right_base = 900;
+  const int stripe_half = 8;
 
-    // Image BEV binaire : fond noir, deux stripes blanches courbes.
-    cv::Mat bev(H, W, CV_8UC1, cv::Scalar(0));
-    for (int y = 0; y < H; ++y) {
-        const double yFromBottom = static_cast<double>(H - 1 - y);
-        const int xL = cvRound(leftBase  + K * yFromBottom * yFromBottom);
-        const int xR = cvRound(rightBase + K * yFromBottom * yFromBottom);
-        for (int dx = -stripeHalf; dx <= stripeHalf; ++dx) {
-            if (xL + dx >= 0 && xL + dx < W) bev.at<uchar>(y, xL + dx) = 255;
-            if (xR + dx >= 0 && xR + dx < W) bev.at<uchar>(y, xR + dx) = 255;
+  ::cv::Mat bev( height, width, CV_8UC1, ::cv::Scalar( 0 ) );
+
+  for ( int y = 0; y < height; ++y )
+    {
+    const double y_from_bottom = static_cast< double >( height - 1 - y );
+    const int x_left = ::cvRound( left_base + ( curvature * y_from_bottom * y_from_bottom ) );
+    const int x_right = ::cvRound( right_base + ( curvature * y_from_bottom * y_from_bottom ) );
+
+    for ( int dx = -stripe_half; dx <= stripe_half; ++dx )
+      {
+      if ( ( x_left + dx >= 0 ) && ( x_left + dx < width ) )
+        {
+        bev.at< uchar >( y, x_left + dx ) = 255;
         }
+
+      if ( ( x_right + dx >= 0 ) && ( x_right + dx < width ) )
+        {
+        bev.at< uchar >( y, x_right + dx ) = 255;
+        }
+      }
     }
 
-    cv::Mat ref(H, W, CV_8UC3);
-    VideoCaracteristics video(ref);
-    LaneConfig config;
-    config.window_count  = 9;
-    config.window_margin = 80;
-    config.window_min_pix = 5;
-    NullImageSink sink;
-    SlidingWindowSearch searcher(video, config, sink);
+  ::cv::Mat ref( height, width, CV_8UC3 );
+  VideoCaracteristics video( ref );
+  LaneConfig config;
+  config.window_count = 9;
+  config.window_margin = 80;
+  config.window_min_pix = 5;
+  NullImageSink sink;
+  SlidingWindowSearch search( video, config, sink );
 
-    const LanePixels px = searcher.search(bev);
-    const LanePolynomial fitL = LanePolynomial::fit(px.left,  config.window_min_pix);
-    const LanePolynomial fitR = LanePolynomial::fit(px.right, config.window_min_pix);
+  const LanePixels pixels = search.search( bev );
+  const LanePolynomial fit_left = LanePolynomial::fit( pixels.left, config.window_min_pix );
+  const LanePolynomial fit_right = LanePolynomial::fit( pixels.right, config.window_min_pix );
 
-    REQUIRE(fitL.valid);
-    REQUIRE(fitR.valid);
-    // Le terme quadratique doit refleter la courbure positive dessinee.
-    CHECK(fitL.quadratic_coefficient > 1e-4);
-    CHECK(fitR.quadratic_coefficient > 1e-4);
+  REQUIRE( fit_left.valid );
+  REQUIRE( fit_right.valid );
+  CHECK( fit_left.quadratic_coefficient > 1e-4 );
+  CHECK( fit_right.quadratic_coefficient > 1e-4 );
 }
