@@ -1,13 +1,28 @@
-#include "DiskImageSink.h"
+/// @file
+/// @brief Implémentation de DiskImageSink.
 
-#include <utility>
 #include <opencv2/imgcodecs.hpp>
 
-DiskImageSink::DiskImageSink(std::string output_dir): output_dir(std::move(output_dir))
-    {
-    }
+#include <string>
+#include <utility>
 
-bool DiskImageSink::save(const std::string& name, const cv::Mat& frame)
-    {
-        return cv::imwrite(output_dir + "/" + name, frame);
-    }
+#include "DiskImageSink.h"
+
+namespace
+{
+
+const ::std::string PATH_SEPARATOR = "/";  ///< Séparateur de chemin de sortie.
+
+} // namespace
+
+DiskImageSink::DiskImageSink( ::std::string p_output_dir )
+  : m_output_dir( ::std::move( p_output_dir ) )
+{
+}
+
+bool DiskImageSink::save( const ::std::string& p_name, const ::cv::Mat& p_frame )
+{
+  const ::std::string full_path = m_output_dir + PATH_SEPARATOR + p_name;
+
+  return ::cv::imwrite( full_path, p_frame );
+}
