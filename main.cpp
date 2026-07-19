@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     LaneConfig config;
     // Largeur de voie par defaut (pixels BEV) pour reconstruire un cote manquant.
     // Approximation grossiere : a calibrer via BEV pour un usage reel.
-    config.defaultLaneWidthPx = static_cast<double>(video_properties.width_pixel) * 0.35;
+    config.default_lane_width_px = static_cast<double>(video_properties.width_pixel) * 0.35;
 
     cv::Mat image_out;
     DetectLines detecteur(video_properties, config, *debug_sink);

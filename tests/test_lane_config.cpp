@@ -1,14 +1,17 @@
 #include "doctest.h"
+
 #include "LaneConfig.h"
 
-TEST_CASE("LaneConfig fournit des valeurs par defaut saines") {
-    LaneConfig c;
-    CHECK(c.windowCount > 0);
-    CHECK(c.windowMargin > 0);
-    CHECK(c.windowMinPix > 0);
-    CHECK(c.whiteThreshold > 0);
-    CHECK(c.srcTopWidthRatio > 0.0f);
-    CHECK(c.srcTopYRatio > 0.0f);
-    CHECK(c.srcTopYRatio < 1.0f);
-    CHECK(c.defaultLaneWidthPx == doctest::Approx(0.0)); // 0 = pas de reconstruction par defaut
+TEST_CASE( "LaneConfig fournit des valeurs par defaut saines" )
+{
+  LaneConfig config;
+
+  CHECK( config.window_count > 0 );
+  CHECK( config.window_margin > 0 );
+  CHECK( config.window_min_pix > 0 );
+  CHECK( config.white_threshold > 0 );
+  CHECK( config.src_top_width_ratio > 0.0f );
+  CHECK( config.src_top_y_ratio > 0.0f );
+  CHECK( config.src_top_y_ratio < 1.0f );
+  CHECK( config.default_lane_width_px == doctest::Approx( 0.0 ) );
 }

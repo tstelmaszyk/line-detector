@@ -17,7 +17,7 @@ TEST_CASE("draw_lines renvoie une image a la taille d'origine") {
     cv::Mat img = makeLaneImage(1280, 720, 440, 840);
     VideoCaracteristics video(img);
     LaneConfig config;
-    config.defaultLaneWidthPx = 640.0;
+    config.default_lane_width_px = 640.0;
     NullImageSink sink;
     DetectLines det(video, config, sink);
 

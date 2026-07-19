@@ -21,7 +21,7 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
     // la position des lignes au TOUT-BAS (ou commence la 1re fenetre). Sur une moitie
     // basse, une ligne fortement courbee balaie horizontalement et l'argmax tombe
     // au-dessus du bas reel, decalant la 1re fenetre a cote des pixels du ras du bas.
-    const int histTop = std::max(0, H - static_cast<int>(config.histogramBandRatio * H));
+    const int histTop = std::max(0, H - static_cast<int>(config.histogram_band_ratio * H));
     std::vector<int> hist(W, 0);
     for (int y = histTop; y < H; ++y) {
         const uchar* row = bev.ptr<uchar>(y);
@@ -35,9 +35,9 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
     for (int x = W / 2; x < W; ++x) if (hist[x] > rightMax) { rightMax = hist[x]; rightBase = x; }
 
     LanePixels pixels;
-    const int nWindows = config.windowCount;
-    const int margin   = config.windowMargin;
-    const int minPix   = config.windowMinPix;
+    const int nWindows = config.window_count;
+    const int margin   = config.window_margin;
+    const int minPix   = config.window_min_pix;
     const int winH     = std::max(1, H / nWindows); // H%nWindows lignes du haut non scannees si H non divisible (sans consequence a 720p)
 
     int leftCur = leftBase, rightCur = rightBase;
@@ -45,7 +45,7 @@ LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
     for (int w = 0; w < nWindows; ++w) {
         const int yLow  = std::max(0, H - (w + 1) * winH);
         const int yHigh = H - w * winH;
-        const int m     = (w == 0) ? config.firstWindowMargin : margin; // 1re fenetre elargie : rattrape la queue qui part vite en courbe au ras du bas
+        const int m     = (w == 0) ? config.first_window_margin : margin; // 1re fenetre elargie : rattrape la queue qui part vite en courbe au ras du bas
 
         // Fenetre gauche.
         int sumX = 0, count = 0;

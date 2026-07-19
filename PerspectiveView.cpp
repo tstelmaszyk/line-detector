@@ -11,8 +11,8 @@ PerspectiveView::PerspectiveView(const VideoCaracteristics& video, const LaneCon
     const float W = static_cast<float>(video_properties.width_pixel);
     const float H = static_cast<float>(video_properties.height_pixel);
 
-    const float topY    = config.srcTopYRatio * H;
-    const float topHalf = config.srcTopWidthRatio * W;
+    const float topY    = config.src_top_y_ratio * H;
+    const float topHalf = config.src_top_width_ratio * W;
 
     // Quad source : trapeze (haut retreci vers l'horizon, bas plein cadre).
     src_quad = {
@@ -23,7 +23,7 @@ PerspectiveView::PerspectiveView(const VideoCaracteristics& video, const LaneCon
     };
 
     // Rectangle BEV, avec marge laterale pour laisser respirer les virages.
-    const float margin = config.bevMarginRatio * W;
+    const float margin = config.bev_margin_ratio * W;
     const std::vector<cv::Point2f> dst_quad = {
         cv::Point2f(margin,     0.0f),
         cv::Point2f(W - margin, 0.0f),

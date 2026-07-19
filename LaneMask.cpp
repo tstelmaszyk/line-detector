@@ -18,37 +18,37 @@ void LaneMask::compute(const cv::Mat& bgr, cv::Mat& binary)
     cv::Mat gray;
     cv::cvtColor(bgr, gray, cv::COLOR_BGR2GRAY);
     cv::Mat white;
-    cv::threshold(gray, white, config.whiteThreshold, 255, cv::THRESH_BINARY);
+    cv::threshold(gray, white, config.white_threshold, 255, cv::THRESH_BINARY);
 
     // 2. Marquage jaune : plage de teinte en HSV.
     cv::Mat hsv;
     cv::cvtColor(bgr, hsv, cv::COLOR_BGR2HSV);
     cv::Mat yellow;
     cv::inRange(hsv,
-                cv::Scalar(config.yellowHue[0], 80, 80),
-                cv::Scalar(config.yellowHue[1], 255, 255),
+                cv::Scalar(config.yellow_hue[0], 80, 80),
+                cv::Scalar(config.yellow_hue[1], 255, 255),
                 yellow);
 
     // 3. Gradient horizontal (Sobel x) : renforce les bords de marquage.
     //    Flou prealable pour ne pas reagir a la texture haute-frequence de l'asphalte.
     cv::Mat grayBlur;
-    cv::GaussianBlur(gray, grayBlur, cv::Size(config.blurKernel, config.blurKernel), 0);
+    cv::GaussianBlur(gray, grayBlur, cv::Size(config.blur_kernel, config.blur_kernel), 0);
     cv::Mat sobelx, sobel_abs, sobel_bin;
-    cv::Sobel(grayBlur, sobelx, CV_16S, 1, 0, config.sobelKernel);
+    cv::Sobel(grayBlur, sobelx, CV_16S, 1, 0, config.sobel_kernel);
     cv::convertScaleAbs(sobelx, sobel_abs);
-    cv::inRange(sobel_abs, cv::Scalar(config.sobelThreshLow), cv::Scalar(config.sobelThreshHigh), sobel_bin);
+    cv::inRange(sobel_abs, cv::Scalar(config.sobel_thresh_low), cv::Scalar(config.sobel_thresh_high), sobel_bin);
 
     // Le grain de la piste/asphalte est plus grossier dans le champ proche (bas de
     // l'image) et survit au flou : il noierait le bas du masque de bruit poivre-et-sel.
     // Le blanc/jaune y sont propres et suffisent, donc on ne garde le Sobel que dans
     // le champ lointain (haut), la ou les marquages sont fins/peu contrastes.
-    const int sobelCutoff = static_cast<int>(config.sobelNearCutoffRatio * sobel_bin.rows);
+    const int sobelCutoff = static_cast<int>(config.sobel_near_cutoff_ratio * sobel_bin.rows);
     if (sobelCutoff >= 0 && sobelCutoff < sobel_bin.rows)
         sobel_bin.rowRange(sobelCutoff, sobel_bin.rows).setTo(0);
 
     // 4. Combinaison OR des trois masques, puis ouverture morpho pour effacer les mouchetures isolees.
     binary = white | yellow | sobel_bin;
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, {config.morphKernel, config.morphKernel});
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, {config.morph_kernel, config.morph_kernel});
     cv::morphologyEx(binary, binary, cv::MORPH_OPEN, kernel);
 
     SMART_ASSERT(binary.type() == CV_8UC1, "LaneMask: sortie non binaire mono-canal");

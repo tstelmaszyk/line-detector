@@ -41,8 +41,8 @@ LaneModel DetectLines::draw_lines(const cv::Mat& frame_to_compute, cv::Mat& fram
     const LanePixels px = search.search(bev);
 
     LaneModel model;
-    model.left  = LanePolynomial::fit(px.left,  config.windowMinPix);
-    model.right = LanePolynomial::fit(px.right, config.windowMinPix);
+    model.left  = LanePolynomial::fit(px.left,  config.window_min_pix);
+    model.right = LanePolynomial::fit(px.right, config.window_min_pix);
 
     model = LaneGeometry::compute(model, video_properties, config);
 

@@ -40,11 +40,11 @@ TEST_CASE("centre de voie a droite du centre image -> offset negatif") {
     CHECK_FALSE(r.reconstructed);
 }
 
-TEST_CASE("un seul cote valide + defaultLaneWidthPx -> reconstruction") {
+TEST_CASE("un seul cote valide + default_lane_width_px -> reconstruction") {
     cv::Mat ref(720, 1280, CV_8UC3);
     VideoCaracteristics video(ref);
     LaneConfig config;
-    config.defaultLaneWidthPx = 400.0;
+    config.default_lane_width_px = 400.0;
     LaneModel m;
     m.left = straight(440); // right invalide
     const LaneModel r = LaneGeometry::compute(m, video, config);

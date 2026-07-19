@@ -11,13 +11,13 @@ LaneModel LaneGeometry::compute(LaneModel model,
     const double imageCenterX = static_cast<double>(video.width_pixel) / 2.0;
 
     // Reconstruction du cote manquant par decalage d'une largeur de voie.
-    if (model.left.valid && !model.right.valid && config.defaultLaneWidthPx > 0.0) {
+    if (model.left.valid && !model.right.valid && config.default_lane_width_px > 0.0) {
         model.right = model.left;
-        model.right.c += config.defaultLaneWidthPx;
+        model.right.c += config.default_lane_width_px;
         model.reconstructed = true;
-    } else if (model.right.valid && !model.left.valid && config.defaultLaneWidthPx > 0.0) {
+    } else if (model.right.valid && !model.left.valid && config.default_lane_width_px > 0.0) {
         model.left = model.right;
-        model.left.c -= config.defaultLaneWidthPx;
+        model.left.c -= config.default_lane_width_px;
         model.reconstructed = true;
     }
 

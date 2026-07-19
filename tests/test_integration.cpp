@@ -21,7 +21,7 @@ TEST_CASE("pipeline complet : voie symetrique -> offset proche de zero") {
     cv::Mat img = makeLaneImage(W, H, 440, 840); // symetrique autour de 640
     VideoCaracteristics video(img);
     LaneConfig config;
-    config.defaultLaneWidthPx = W * 0.5;
+    config.default_lane_width_px = W * 0.5;
     NullImageSink sink;
     DetectLines det(video, config, sink);
 
@@ -37,7 +37,7 @@ TEST_CASE("pipeline complet : voie decalee a droite -> offset negatif") {
     cv::Mat img = makeLaneImage(W, H, 540, 940); // decalee +100
     VideoCaracteristics video(img);
     LaneConfig config;
-    config.defaultLaneWidthPx = W * 0.5;
+    config.default_lane_width_px = W * 0.5;
     NullImageSink sink;
     DetectLines det(video, config, sink);
 
@@ -74,15 +74,15 @@ TEST_CASE("recherche + fit sur voie courbe -> terme quadratique non nul") {
     cv::Mat ref(H, W, CV_8UC3);
     VideoCaracteristics video(ref);
     LaneConfig config;
-    config.windowCount  = 9;
-    config.windowMargin = 80;
-    config.windowMinPix = 5;
+    config.window_count  = 9;
+    config.window_margin = 80;
+    config.window_min_pix = 5;
     NullImageSink sink;
     SlidingWindowSearch searcher(video, config, sink);
 
     const LanePixels px = searcher.search(bev);
-    const LanePolynomial fitL = LanePolynomial::fit(px.left,  config.windowMinPix);
-    const LanePolynomial fitR = LanePolynomial::fit(px.right, config.windowMinPix);
+    const LanePolynomial fitL = LanePolynomial::fit(px.left,  config.window_min_pix);
+    const LanePolynomial fitR = LanePolynomial::fit(px.right, config.window_min_pix);
 
     REQUIRE(fitL.valid);
     REQUIRE(fitR.valid);
