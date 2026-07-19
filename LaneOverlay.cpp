@@ -21,7 +21,7 @@ void LaneOverlay::render(const cv::Mat& original_bgr, const LaneModel& model, cv
         return;
     }
 
-    const cv::Size bev = perspective.bevSize();
+    const cv::Size bev = perspective.bev_size();
     cv::Mat lane_bev(bev, CV_8UC3, cv::Scalar(0, 0, 0));
 
     // Polygone entre les deux polynomes, echantillonne le long de y.
@@ -35,7 +35,7 @@ void LaneOverlay::render(const cv::Mat& original_bgr, const LaneModel& model, cv
 
     // Retour en perspective image et fusion.
     cv::Mat lane_img;
-    perspective.warpBack(lane_bev, lane_img);
+    perspective.warp_back(lane_bev, lane_img);
     // src1==dst est intentionnel et supporte par addWeighted (in-place aliasing OK).
     cv::addWeighted(output, 1.0, lane_img, 0.3, 0.0, output);
 

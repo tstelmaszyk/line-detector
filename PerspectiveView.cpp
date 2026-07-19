@@ -1,55 +1,100 @@
+/// @file
+/// @brief Implémentation de PerspectiveView.
+
+#include <opencv2/imgproc.hpp>
+
+#include <cmath>
+#include <vector>
+
 #include "PerspectiveView.h"
 #include "SmartAssert.h"
 
-#include <cmath>
-#include <opencv2/imgproc.hpp>
-
-PerspectiveView::PerspectiveView(const VideoCaracteristics& video, const LaneConfig& config, ImageSink& debug_sink)
-    : video_properties(video), config(config), debug_sink(debug_sink),
-      bev_size(video.image_size)
+namespace
 {
-    const float W = static_cast<float>(video_properties.width_pixel);
-    const float H = static_cast<float>(video_properties.height_pixel);
 
-    const float topY    = config.src_top_y_ratio * H;
-    const float topHalf = config.src_top_width_ratio * W;
+const float CENTER_DIVISOR = 2.0f;               ///< Diviseur pour le centre horizontal.
+const double MIN_HOMOGRAPHY_DETERMINANT = 1e-6;  ///< Déterminant mini d'une homographie non dégénérée.
 
-    // Quad source : trapeze (haut retreci vers l'horizon, bas plein cadre).
-    src_quad = {
-        cv::Point2f(W / 2.0f - topHalf, topY), // haut gauche
-        cv::Point2f(W / 2.0f + topHalf, topY), // haut droit
-        cv::Point2f(W,                  H),    // bas droit
-        cv::Point2f(0.0f,               H)     // bas gauche
-    };
+} // namespace
 
-    // Rectangle BEV, avec marge laterale pour laisser respirer les virages.
-    const float margin = config.bev_margin_ratio * W;
-    const std::vector<cv::Point2f> dst_quad = {
-        cv::Point2f(margin,     0.0f),
-        cv::Point2f(W - margin, 0.0f),
-        cv::Point2f(W - margin, H),
-        cv::Point2f(margin,     H)
-    };
+PerspectiveView::PerspectiveView( const VideoCaracteristics& p_video,
+                                  const LaneConfig& p_config,
+                                  ImageSink& p_debug_sink )
+  : m_video_properties( p_video ),
+    m_config( p_config ),
+    m_debug_sink( p_debug_sink ),
+    m_bev_size( p_video.image_size )
+{
+  const float width = static_cast< float >( m_video_properties.width_pixel );
+  const float height = static_cast< float >( m_video_properties.height_pixel );
 
-    M    = cv::getPerspectiveTransform(src_quad, dst_quad);
-    Minv = cv::getPerspectiveTransform(dst_quad, src_quad);
-    SMART_ASSERT(std::abs(cv::determinant(M)) > 1e-6,
-                 "PerspectiveView: homographie degeneree (points colineaires ?)");
+  const float top_y = m_config.src_top_y_ratio * height;
+  const float top_half = m_config.src_top_width_ratio * width;
+  const float center_x = width / CENTER_DIVISOR;
+
+  // Quad source : trapèze (haut rétréci vers l'horizon, bas plein cadre).
+  m_src_quad = {
+    ::cv::Point2f( center_x - top_half, top_y ),  // haut gauche
+    ::cv::Point2f( center_x + top_half, top_y ),  // haut droit
+    ::cv::Point2f( width, height ),               // bas droit
+    ::cv::Point2f( 0.0f, height )                 // bas gauche
+  };
+
+  // Rectangle BEV, avec marge latérale pour laisser respirer les virages.
+  const float margin = m_config.bev_margin_ratio * width;
+  const ::std::vector< ::cv::Point2f > dst_quad = {
+    ::cv::Point2f( margin, 0.0f ),
+    ::cv::Point2f( width - margin, 0.0f ),
+    ::cv::Point2f( width - margin, height ),
+    ::cv::Point2f( margin, height )
+  };
+
+  m_perspective_matrix = ::cv::getPerspectiveTransform( m_src_quad, dst_quad );
+  m_perspective_matrix_inverse = ::cv::getPerspectiveTransform( dst_quad, m_src_quad );
+
+  const double determinant = ::std::abs( ::cv::determinant( m_perspective_matrix ) );
+  SMART_ASSERT( determinant > MIN_HOMOGRAPHY_DETERMINANT,
+                "PerspectiveView: homographie degeneree (points colineaires ?)" );
 }
 
-void PerspectiveView::toBev(const cv::Mat& src, cv::Mat& bev) const
+void PerspectiveView::to_bev( const ::cv::Mat& p_src, ::cv::Mat& p_bev ) const
 {
-    SMART_ASSERT(!src.empty(), "toBev: entree vide");
-    SMART_ASSERT(src.size() == video_properties.image_size, "toBev: taille != VideoCaracteristics");
-    cv::warpPerspective(src, bev, M, bev_size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0));
+  const bool is_empty = p_src.empty();
+  const bool size_matches = ( p_src.size() == m_video_properties.image_size );
+
+  SMART_ASSERT( !is_empty, "to_bev: entree vide" );
+  SMART_ASSERT( size_matches, "to_bev: taille != VideoCaracteristics" );
+
+  ::cv::warpPerspective( p_src,
+                         p_bev,
+                         m_perspective_matrix,
+                         m_bev_size,
+                         ::cv::INTER_LINEAR,
+                         ::cv::BORDER_CONSTANT,
+                         ::cv::Scalar( 0 ) );
 }
 
-void PerspectiveView::warpBack(const cv::Mat& bev, cv::Mat& dst) const
+void PerspectiveView::warp_back( const ::cv::Mat& p_bev, ::cv::Mat& p_dst ) const
 {
-    SMART_ASSERT(!bev.empty(), "warpBack: entree vide");
-    cv::warpPerspective(bev, dst, Minv, video_properties.image_size,
-                        cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0));
+  const bool is_empty = p_bev.empty();
+
+  SMART_ASSERT( !is_empty, "warp_back: entree vide" );
+
+  ::cv::warpPerspective( p_bev,
+                         p_dst,
+                         m_perspective_matrix_inverse,
+                         m_video_properties.image_size,
+                         ::cv::INTER_LINEAR,
+                         ::cv::BORDER_CONSTANT,
+                         ::cv::Scalar( 0 ) );
 }
 
-cv::Size PerspectiveView::bevSize() const { return bev_size; }
-const std::vector<cv::Point2f>& PerspectiveView::sourceQuad() const { return src_quad; }
+::cv::Size PerspectiveView::bev_size() const
+{
+  return m_bev_size;
+}
+
+const ::std::vector< ::cv::Point2f >& PerspectiveView::source_quad() const
+{
+  return m_src_quad;
+}

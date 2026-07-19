@@ -19,14 +19,14 @@ LaneModel DetectLines::draw_lines(const cv::Mat& frame_to_compute, cv::Mat& fram
     mask.compute(frame_to_compute, binary);
 
     cv::Mat bev;
-    perspective.toBev(binary, bev);
+    perspective.to_bev(binary, bev);
     debug_sink.save("debug_02_bev.jpg", bev);
 
     // Debug calibration BEV (inspectables a l'oeil, contrairement au masque warpe) :
     // le trapeze source dessine sur l'image couleur, et le warp couleur en vue de dessus.
     {
         cv::Mat trapeze = frame_to_compute.clone();
-        const std::vector<cv::Point2f>& quad = perspective.sourceQuad();
+        const std::vector<cv::Point2f>& quad = perspective.source_quad();
         std::vector<cv::Point> poly;
         poly.reserve(quad.size());
         for (const cv::Point2f& p : quad) poly.emplace_back(cvRound(p.x), cvRound(p.y));
@@ -34,7 +34,7 @@ LaneModel DetectLines::draw_lines(const cv::Mat& frame_to_compute, cv::Mat& fram
         debug_sink.save("debug_02a_trapeze.jpg", trapeze);
 
         cv::Mat bev_color;
-        perspective.toBev(frame_to_compute, bev_color);
+        perspective.to_bev(frame_to_compute, bev_color);
         debug_sink.save("debug_02b_bev_color.jpg", bev_color);
     }
 
