@@ -1,20 +1,20 @@
 #pragma once
 
+/// @file
+/// @brief Résultat de la détection : modèle de voie + signal de pilotage.
+
 #include "LanePolynomial.h"
 
-/*!
-*  \brief Resultat complet de la detection : modele de voie + signal de pilotage.
-*
-*  Les polynomes sont exprimes en pixels BEV. Le signal (offset, courbure) est
-*  rempli par LaneGeometry. Consomme plus tard par le module de controle.
-*/
-struct LaneModel {
-    LanePolynomial left;
-    LanePolynomial right;
-    bool   laneDetected  = false;
-    bool   reconstructed = false; // true si un cote a ete reconstruit par decalage — signal degrade, cf. LaneGeometry
+/// @brief Résultat complet : deux polynômes de voie (pixels BEV) + signal de
+/// pilotage rempli par LaneGeometry. Consommé plus tard par le module de contrôle.
+struct LaneModel
+  {
+  LanePolynomial left;               ///< Polynôme du côté gauche (pixels BEV).
+  LanePolynomial right;              ///< Polynôme du côté droit (pixels BEV).
+  bool lane_detected = false;        ///< true si une voie exploitable est détectée.
+  bool reconstructed = false;        ///< true si un côté a été reconstruit (signal dégradé).
 
-    double lateralOffsetPx   = 0.0; // ecart vehicule <-> centre voie, au bas de l'image
-    double normalizedOffset  = 0.0; // offset / demi-largeur voie ; <0 = trop a gauche
-    double curvatureRadiusPx = 0.0; // rayon de courbure (grand = quasi droit)
-};
+  double lateral_offset_px = 0.0;    ///< Écart véhicule↔centre voie au bas de l'image.
+  double normalized_offset = 0.0;    ///< offset / demi-largeur ; <0 = décalé à gauche.
+  double curvature_radius_px = 0.0;  ///< Rayon de courbure (grand = quasi droit).
+  };

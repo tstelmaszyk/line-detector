@@ -22,10 +22,10 @@ LaneModel LaneGeometry::compute(LaneModel model,
     }
 
     if (!model.left.valid || !model.right.valid) {
-        model.laneDetected = false;
-        model.lateralOffsetPx = 0.0;
-        model.normalizedOffset = 0.0;
-        model.curvatureRadiusPx = 0.0;
+        model.lane_detected = false;
+        model.lateral_offset_px = 0.0;
+        model.normalized_offset = 0.0;
+        model.curvature_radius_px = 0.0;
         return model;
     }
 
@@ -34,18 +34,18 @@ LaneModel LaneGeometry::compute(LaneModel model,
 
     // Sanite : largeur de voie positive plausible (aléa -> drapeau, pas assert).
     if (xRight - xLeft <= 1.0) {
-        model.laneDetected = false;
-        model.lateralOffsetPx = 0.0;
-        model.normalizedOffset = 0.0;
-        model.curvatureRadiusPx = 0.0;
+        model.lane_detected = false;
+        model.lateral_offset_px = 0.0;
+        model.normalized_offset = 0.0;
+        model.curvature_radius_px = 0.0;
         return model;
     }
 
     const double laneCenter = (xLeft + xRight) / 2.0;
     const double halfWidth  = (xRight - xLeft) / 2.0;
 
-    model.lateralOffsetPx  = imageCenterX - laneCenter;
-    model.normalizedOffset = model.lateralOffsetPx / halfWidth;
+    model.lateral_offset_px  = imageCenterX - laneCenter;
+    model.normalized_offset = model.lateral_offset_px / halfWidth;
 
     // Rayon de courbure du cote gauche (les deux sont ~paralleles en BEV).
     const double a = model.left.quadratic_coefficient;
@@ -53,13 +53,13 @@ LaneModel LaneGeometry::compute(LaneModel model,
     const double denom = std::abs(2.0 * a);
     // |2a| < 1e-9 -> rayon > ~5e8 px, voie consideree droite
     if (denom < 1e-9) {
-        model.curvatureRadiusPx = 1e12; // quasi-droit
+        model.curvature_radius_px = 1e12; // quasi-droit
     } else {
         const double slope = 2.0 * a * yMax + b;
-        model.curvatureRadiusPx = std::pow(1.0 + slope * slope, 1.5) / denom;
+        model.curvature_radius_px = std::pow(1.0 + slope * slope, 1.5) / denom;
     }
 
-    SMART_ASSERT(std::isfinite(model.normalizedOffset), "normalizedOffset non fini");
-    model.laneDetected = true;
+    SMART_ASSERT(std::isfinite(model.normalized_offset), "normalized_offset non fini");
+    model.lane_detected = true;
     return model;
 }

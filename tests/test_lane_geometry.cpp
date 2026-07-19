@@ -17,9 +17,9 @@ TEST_CASE("voie symetrique -> offset nul") {
     m.left  = straight(440);  // centre image = 640, centre voie = (440+840)/2 = 640
     m.right = straight(840);
     const LaneModel r = LaneGeometry::compute(m, video, config);
-    REQUIRE(r.laneDetected);
-    CHECK(r.lateralOffsetPx == doctest::Approx(0.0));
-    CHECK(r.normalizedOffset == doctest::Approx(0.0));
+    REQUIRE(r.lane_detected);
+    CHECK(r.lateral_offset_px == doctest::Approx(0.0));
+    CHECK(r.normalized_offset == doctest::Approx(0.0));
     CHECK_FALSE(r.reconstructed);
 }
 
@@ -31,12 +31,12 @@ TEST_CASE("centre de voie a droite du centre image -> offset negatif") {
     m.left  = straight(500);
     m.right = straight(900);  // centre voie = 700 > 640 -> vehicule a gauche
     const LaneModel r = LaneGeometry::compute(m, video, config);
-    REQUIRE(r.laneDetected);
-    CHECK(r.lateralOffsetPx < 0.0);
-    CHECK(r.normalizedOffset < 0.0);
+    REQUIRE(r.lane_detected);
+    CHECK(r.lateral_offset_px < 0.0);
+    CHECK(r.normalized_offset < 0.0);
     // Valeurs exactes : imageCenter 640 - laneCenter 700 = -60 ; halfWidth 200.
-    CHECK(r.lateralOffsetPx == doctest::Approx(-60.0));
-    CHECK(r.normalizedOffset == doctest::Approx(-0.3));
+    CHECK(r.lateral_offset_px == doctest::Approx(-60.0));
+    CHECK(r.normalized_offset == doctest::Approx(-0.3));
     CHECK_FALSE(r.reconstructed);
 }
 
@@ -48,7 +48,7 @@ TEST_CASE("un seul cote valide + default_lane_width_px -> reconstruction") {
     LaneModel m;
     m.left = straight(440); // right invalide
     const LaneModel r = LaneGeometry::compute(m, video, config);
-    REQUIRE(r.laneDetected);
+    REQUIRE(r.lane_detected);
     CHECK(r.right.valid);
     CHECK(r.right.constant_coefficient == doctest::Approx(840.0)); // 440 + 400
     CHECK(r.reconstructed);
@@ -60,5 +60,5 @@ TEST_CASE("aucun cote valide -> laneDetected faux") {
     LaneConfig config;
     LaneModel m;
     const LaneModel r = LaneGeometry::compute(m, video, config);
-    CHECK_FALSE(r.laneDetected);
+    CHECK_FALSE(r.lane_detected);
 }

@@ -27,8 +27,8 @@ TEST_CASE("pipeline complet : voie symetrique -> offset proche de zero") {
 
     cv::Mat out;
     const LaneModel m = det.draw_lines(img, out);
-    REQUIRE(m.laneDetected);
-    CHECK(std::abs(m.normalizedOffset) < 0.15);
+    REQUIRE(m.lane_detected);
+    CHECK(std::abs(m.normalized_offset) < 0.15);
 }
 
 // Voie decalee a droite -> centre de voie a droite du centre image -> offset < 0.
@@ -43,8 +43,8 @@ TEST_CASE("pipeline complet : voie decalee a droite -> offset negatif") {
 
     cv::Mat out;
     const LaneModel m = det.draw_lines(img, out);
-    REQUIRE(m.laneDetected);
-    CHECK(m.normalizedOffset < 0.0);
+    REQUIRE(m.lane_detected);
+    CHECK(m.normalized_offset < 0.0);
 }
 
 // Voie courbe (BEV binaire) : verifie que SlidingWindowSearch + fit suivent

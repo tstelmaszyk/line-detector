@@ -16,7 +16,7 @@ void LaneOverlay::render(const cv::Mat& original_bgr, const LaneModel& model, cv
     SMART_ASSERT(original_bgr.channels() == 3, "render: attend une image BGR");
 
     output = original_bgr.clone();
-    if (!model.laneDetected) {
+    if (!model.lane_detected) {
         debug_sink.save("debug_05_overlay.jpg", output);
         return;
     }
@@ -42,7 +42,7 @@ void LaneOverlay::render(const cv::Mat& original_bgr, const LaneModel& model, cv
     // HUD : offset normalise et rayon de courbure.
     char hud[128];
     std::snprintf(hud, sizeof(hud), "offset=%.2f  R=%.0fpx",
-                  model.normalizedOffset, model.curvatureRadiusPx);
+                  model.normalized_offset, model.curvature_radius_px);
     cv::putText(output, hud, cv::Point(20, 40), cv::FONT_HERSHEY_SIMPLEX, 1.0,
                 cv::Scalar(0, 0, 255), 2);
 

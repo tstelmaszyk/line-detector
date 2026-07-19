@@ -47,9 +47,9 @@ int main(int argc, char** argv)
     DetectLines detecteur(video_properties, config, *debug_sink);
     const LaneModel model = detecteur.draw_lines(image, image_out);
 
-    std::cout << "Voie detectee : " << (model.laneDetected ? "oui" : "non")
-              << " | offset normalise : " << model.normalizedOffset
-              << " | rayon : " << model.curvatureRadiusPx << " px"
+    std::cout << "Voie detectee : " << (model.lane_detected ? "oui" : "non")
+              << " | offset normalise : " << model.normalized_offset
+              << " | rayon : " << model.curvature_radius_px << " px"
               << " | reconstruit : " << (model.reconstructed ? "oui" : "non") << std::endl;
 
     if (!result_sink.save(output_name, image_out)) {
