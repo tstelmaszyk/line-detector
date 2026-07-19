@@ -6,7 +6,7 @@
 #include <opencv2/core.hpp>
 
 static LanePolynomial straight(double x) {
-    LanePolynomial p; p.a = 0; p.b = 0; p.c = x; p.valid = true; return p;
+    LanePolynomial p; p.quadratic_coefficient = 0; p.linear_coefficient = 0; p.constant_coefficient = x; p.valid = true; return p;
 }
 
 TEST_CASE("voie symetrique -> offset nul") {
@@ -50,7 +50,7 @@ TEST_CASE("un seul cote valide + default_lane_width_px -> reconstruction") {
     const LaneModel r = LaneGeometry::compute(m, video, config);
     REQUIRE(r.laneDetected);
     CHECK(r.right.valid);
-    CHECK(r.right.c == doctest::Approx(840.0)); // 440 + 400
+    CHECK(r.right.constant_coefficient == doctest::Approx(840.0)); // 440 + 400
     CHECK(r.reconstructed);
 }
 

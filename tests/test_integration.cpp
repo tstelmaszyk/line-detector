@@ -87,6 +87,6 @@ TEST_CASE("recherche + fit sur voie courbe -> terme quadratique non nul") {
     REQUIRE(fitL.valid);
     REQUIRE(fitR.valid);
     // Le terme quadratique doit refleter la courbure positive dessinee.
-    CHECK(fitL.a > 1e-4);
-    CHECK(fitR.a > 1e-4);
+    CHECK(fitL.quadratic_coefficient > 1e-4);
+    CHECK(fitR.quadratic_coefficient > 1e-4);
 }

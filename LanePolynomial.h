@@ -1,22 +1,34 @@
 #pragma once
 
-#include <vector>
+/// @file
+/// @brief Polynôme de voie d'ordre 2 paramétré par y : x = a*y^2 + b*y + c.
+
 #include <opencv2/core.hpp>
 
-/*!
-*  \brief Polynome de voie d'ordre 2, parametre par y : x = a*y^2 + b*y + c.
-*
-*  On parametre par y (et non x) car les voies sont ~verticales dans l'image,
-*  ce qui evite les pentes infinies. `valid` distingue un fit reussi d'un cote
-*  absent (aléa de la route, pas une erreur -> drapeau, pas d'assert).
-*/
-struct LanePolynomial {
-    double a = 0.0, b = 0.0, c = 0.0;
-    bool   valid = false;
+#include <vector>
 
-    double evalAt(double y) const;
+/// @brief Nombre minimal de points par défaut pour un fit fiable.
+static const int LANE_POLYNOMIAL_DEFAULT_MIN_POINTS = 3;
 
-    // Ajuste au sens des moindres carres. Renvoie valid=false si
-    // points.size() < minPoints (cote absent / trop peu de pixels).
-    static LanePolynomial fit(const std::vector<cv::Point>& points, int minPoints = 3);
-};
+/// @brief Polynôme de voie d'ordre 2. Paramétré par y (voies ~verticales) pour
+/// éviter les pentes infinies. `valid` distingue un fit réussi d'un côté absent
+/// (aléa de la route → drapeau, pas d'assert).
+struct LanePolynomial
+  {
+  double quadratic_coefficient = 0.0;  ///< Coefficient du terme y^2.
+  double linear_coefficient = 0.0;     ///< Coefficient du terme y.
+  double constant_coefficient = 0.0;   ///< Terme constant.
+  bool valid = false;                  ///< true si le fit a réussi.
+
+  /// @brief Évalue x pour un y donné.
+  /// @param p_y Ordonnée (pixels BEV).
+  /// @return Abscisse x correspondante.
+  double eval_at( double p_y ) const;
+
+  /// @brief Ajuste un polynôme d'ordre 2 aux points (moindres carrés).
+  /// @param p_points     Points (x, y) à ajuster.
+  /// @param p_min_points Nombre minimal de points requis.
+  /// @return Polynôme ; valid=false si trop peu de points.
+  static LanePolynomial fit( const ::std::vector< ::cv::Point >& p_points,
+                             int p_min_points = LANE_POLYNOMIAL_DEFAULT_MIN_POINTS );
+  };

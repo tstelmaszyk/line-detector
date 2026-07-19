@@ -13,11 +13,11 @@ LaneModel LaneGeometry::compute(LaneModel model,
     // Reconstruction du cote manquant par decalage d'une largeur de voie.
     if (model.left.valid && !model.right.valid && config.default_lane_width_px > 0.0) {
         model.right = model.left;
-        model.right.c += config.default_lane_width_px;
+        model.right.constant_coefficient += config.default_lane_width_px;
         model.reconstructed = true;
     } else if (model.right.valid && !model.left.valid && config.default_lane_width_px > 0.0) {
         model.left = model.right;
-        model.left.c -= config.default_lane_width_px;
+        model.left.constant_coefficient -= config.default_lane_width_px;
         model.reconstructed = true;
     }
 
@@ -29,8 +29,8 @@ LaneModel LaneGeometry::compute(LaneModel model,
         return model;
     }
 
-    const double xLeft  = model.left.evalAt(yMax);
-    const double xRight = model.right.evalAt(yMax);
+    const double xLeft  = model.left.eval_at(yMax);
+    const double xRight = model.right.eval_at(yMax);
 
     // Sanite : largeur de voie positive plausible (aléa -> drapeau, pas assert).
     if (xRight - xLeft <= 1.0) {
@@ -48,8 +48,8 @@ LaneModel LaneGeometry::compute(LaneModel model,
     model.normalizedOffset = model.lateralOffsetPx / halfWidth;
 
     // Rayon de courbure du cote gauche (les deux sont ~paralleles en BEV).
-    const double a = model.left.a;
-    const double b = model.left.b;
+    const double a = model.left.quadratic_coefficient;
+    const double b = model.left.linear_coefficient;
     const double denom = std::abs(2.0 * a);
     // |2a| < 1e-9 -> rayon > ~5e8 px, voie consideree droite
     if (denom < 1e-9) {

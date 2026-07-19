@@ -16,8 +16,8 @@ TEST_CASE("render preserve taille/type et modifie des pixels quand la voie est d
     LaneOverlay overlay(pv, sink);
 
     LaneModel m;
-    m.left.a = 0;  m.left.b = 0;  m.left.c = 400;  m.left.valid = true;
-    m.right.a = 0; m.right.b = 0; m.right.c = 800; m.right.valid = true;
+    m.left.quadratic_coefficient = 0;  m.left.linear_coefficient = 0;  m.left.constant_coefficient = 400;  m.left.valid = true;
+    m.right.quadratic_coefficient = 0; m.right.linear_coefficient = 0; m.right.constant_coefficient = 800; m.right.valid = true;
     m.laneDetected = true;
 
     cv::Mat out;

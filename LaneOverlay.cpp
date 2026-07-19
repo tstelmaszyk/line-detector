@@ -27,9 +27,9 @@ void LaneOverlay::render(const cv::Mat& original_bgr, const LaneModel& model, cv
     // Polygone entre les deux polynomes, echantillonne le long de y.
     std::vector<cv::Point> poly;
     for (int y = 0; y < bev.height; ++y)
-        poly.emplace_back(cvRound(model.left.evalAt(y)), y);
+        poly.emplace_back(cvRound(model.left.eval_at(y)), y);
     for (int y = bev.height - 1; y >= 0; --y)
-        poly.emplace_back(cvRound(model.right.evalAt(y)), y);
+        poly.emplace_back(cvRound(model.right.eval_at(y)), y);
     const std::vector<std::vector<cv::Point>> polys = { poly };
     cv::fillPoly(lane_bev, polys, cv::Scalar(0, 255, 0));
 

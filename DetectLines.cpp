@@ -53,8 +53,8 @@ LaneModel DetectLines::draw_lines(const cv::Mat& frame_to_compute, cv::Mat& fram
         std::vector<cv::Point> ptL, ptR;
         ptL.reserve(bev.rows); ptR.reserve(bev.rows);
         for (int y = 0; y < bev.rows; ++y) {
-            ptL.emplace_back(cvRound(model.left.evalAt(y)),  y);
-            ptR.emplace_back(cvRound(model.right.evalAt(y)), y);
+            ptL.emplace_back(cvRound(model.left.eval_at(y)),  y);
+            ptR.emplace_back(cvRound(model.right.eval_at(y)), y);
         }
         cv::polylines(fit_dbg, ptL, false, cv::Scalar(0,   0, 255), 2);
         cv::polylines(fit_dbg, ptR, false, cv::Scalar(255, 0,   0), 2);
