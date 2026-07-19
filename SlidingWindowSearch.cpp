@@ -1,77 +1,172 @@
+/// @file
+/// @brief Implémentation de SlidingWindowSearch.
+
+#include <opencv2/imgproc.hpp>
+
+#include <algorithm>
+#include <vector>
+
 #include "SlidingWindowSearch.h"
 #include "SmartAssert.h"
 
-#include <algorithm>
-#include <opencv2/imgproc.hpp>
+namespace
+{
 
-SlidingWindowSearch::SlidingWindowSearch(const VideoCaracteristics& video, const LaneConfig& config, ImageSink& debug_sink)
-    : video_properties(video), config(config), debug_sink(debug_sink)
+const int HALF_DIVISOR = 2;                         ///< Diviseur pour la moitié de largeur.
+const ::cv::Vec3b COLOR_LEFT_PIXELS( 0, 0, 255 );   ///< Rouge : pixels gauche (debug).
+const ::cv::Vec3b COLOR_RIGHT_PIXELS( 255, 0, 0 );  ///< Bleu : pixels droite (debug).
+
+} // namespace
+
+SlidingWindowSearch::SlidingWindowSearch( const VideoCaracteristics& p_video,
+                                          const LaneConfig& p_config,
+                                          ImageSink& p_debug_sink )
+  : m_video_properties( p_video ),
+    m_config( p_config ),
+    m_debug_sink( p_debug_sink )
 {
 }
 
-LanePixels SlidingWindowSearch::search(const cv::Mat& bev) const
+LanePixels SlidingWindowSearch::search( const ::cv::Mat& p_bev ) const
 {
-    SMART_ASSERT(!bev.empty(), "search: BEV vide");
-    SMART_ASSERT(bev.type() == CV_8UC1, "search: attend un binaire mono-canal");
+  const bool is_empty = p_bev.empty();
+  const bool is_single_channel = ( p_bev.type() == CV_8UC1 );
 
-    const int H = bev.rows;
-    const int W = bev.cols;
+  SMART_ASSERT( !is_empty, "search: BEV vide" );
+  SMART_ASSERT( is_single_channel, "search: attend un binaire mono-canal" );
 
-    // Histogramme des colonnes sur une bande basse etroite : la base doit refleter
-    // la position des lignes au TOUT-BAS (ou commence la 1re fenetre). Sur une moitie
-    // basse, une ligne fortement courbee balaie horizontalement et l'argmax tombe
-    // au-dessus du bas reel, decalant la 1re fenetre a cote des pixels du ras du bas.
-    const int histTop = std::max(0, H - static_cast<int>(config.histogram_band_ratio * H));
-    std::vector<int> hist(W, 0);
-    for (int y = histTop; y < H; ++y) {
-        const uchar* row = bev.ptr<uchar>(y);
-        for (int x = 0; x < W; ++x) if (row[x] > 0) hist[x]++;
+  const int height_px = p_bev.rows;
+  const int width_px = p_bev.cols;
+  const int half_width = width_px / HALF_DIVISOR;
+
+  // Histogramme des colonnes sur une bande basse étroite : la base reflète la
+  // position des lignes au tout-bas (où commence la 1re fenêtre).
+  const int band_height = static_cast< int >( m_config.histogram_band_ratio * height_px );
+  const int hist_top = ::std::max( 0, height_px - band_height );
+
+  ::std::vector< int > column_histogram( width_px, 0 );
+
+  for ( int row = hist_top; row < height_px; ++row )
+    {
+    const uchar* pixel_row = p_bev.ptr< uchar >( row );
+
+    for ( int col = 0; col < width_px; ++col )
+      {
+      if ( pixel_row[col] > 0 )
+        {
+        column_histogram[col]++;
+        }
+      }
     }
 
-    // Deux pics : gauche dans [0, W/2), droite dans [W/2, W).
-    int leftBase = 0, rightBase = W / 2;
-    int leftMax = -1, rightMax = -1;
-    for (int x = 0; x < W / 2; ++x) if (hist[x] > leftMax)  { leftMax = hist[x];  leftBase = x; }
-    for (int x = W / 2; x < W; ++x) if (hist[x] > rightMax) { rightMax = hist[x]; rightBase = x; }
+  // Deux pics : gauche dans [0, W/2), droite dans [W/2, W).
+  int left_base = 0;
+  int right_base = half_width;
+  int left_max = -1;
+  int right_max = -1;
 
-    LanePixels pixels;
-    const int nWindows = config.window_count;
-    const int margin   = config.window_margin;
-    const int minPix   = config.window_min_pix;
-    const int winH     = std::max(1, H / nWindows); // H%nWindows lignes du haut non scannees si H non divisible (sans consequence a 720p)
-
-    int leftCur = leftBase, rightCur = rightBase;
-
-    for (int w = 0; w < nWindows; ++w) {
-        const int yLow  = std::max(0, H - (w + 1) * winH);
-        const int yHigh = H - w * winH;
-        const int m     = (w == 0) ? config.first_window_margin : margin; // 1re fenetre elargie : rattrape la queue qui part vite en courbe au ras du bas
-
-        // Fenetre gauche.
-        int sumX = 0, count = 0;
-        for (int y = yLow; y < yHigh; ++y) {
-            const uchar* row = bev.ptr<uchar>(y);
-            for (int x = std::max(0, leftCur - m); x < std::min(W, leftCur + m); ++x)
-                if (row[x] > 0) { pixels.left.emplace_back(x, y); sumX += x; count++; }
-        }
-        if (count > minPix) leftCur = sumX / count; // sinon on ne bouge pas
-
-        // Fenetre droite.
-        sumX = 0; count = 0;
-        for (int y = yLow; y < yHigh; ++y) {
-            const uchar* row = bev.ptr<uchar>(y);
-            for (int x = std::max(0, rightCur - m); x < std::min(W, rightCur + m); ++x)
-                if (row[x] > 0) { pixels.right.emplace_back(x, y); sumX += x; count++; }
-        }
-        if (count > minPix) rightCur = sumX / count;
+  for ( int col = 0; col < half_width; ++col )
+    {
+    if ( column_histogram[col] > left_max )
+      {
+      left_max = column_histogram[col];
+      left_base = col;
+      }
     }
 
-    // Trace debug : pixels gauche en rouge, droite en bleu.
-    cv::Mat dbg;
-    cv::cvtColor(bev, dbg, cv::COLOR_GRAY2BGR);
-    for (const auto& p : pixels.left)  dbg.at<cv::Vec3b>(p) = cv::Vec3b(0, 0, 255);
-    for (const auto& p : pixels.right) dbg.at<cv::Vec3b>(p) = cv::Vec3b(255, 0, 0);
-    debug_sink.save("debug_03_windows.jpg", dbg);
+  for ( int col = half_width; col < width_px; ++col )
+    {
+    if ( column_histogram[col] > right_max )
+      {
+      right_max = column_histogram[col];
+      right_base = col;
+      }
+    }
 
-    return pixels;
+  LanePixels pixels;
+
+  const int window_count = m_config.window_count;
+  const int standard_margin = m_config.window_margin;
+  const int min_pixels = m_config.window_min_pix;
+  const int window_height = ::std::max( 1, height_px / window_count );
+
+  int left_center = left_base;
+  int right_center = right_base;
+
+  for ( int window_index = 0; window_index < window_count; ++window_index )
+    {
+    const int y_low = ::std::max( 0, height_px - ( ( window_index + 1 ) * window_height ) );
+    const int y_high = height_px - ( window_index * window_height );
+    const int current_margin = ( 0 == window_index ) ? m_config.first_window_margin : standard_margin;
+
+    // Fenêtre gauche.
+    int left_sum_x = 0;
+    int left_pixel_count = 0;
+
+    for ( int row = y_low; row < y_high; ++row )
+      {
+      const uchar* pixel_row = p_bev.ptr< uchar >( row );
+      const int col_begin = ::std::max( 0, left_center - current_margin );
+      const int col_end = ::std::min( width_px, left_center + current_margin );
+
+      for ( int col = col_begin; col < col_end; ++col )
+        {
+        if ( pixel_row[col] > 0 )
+          {
+          pixels.left.emplace_back( col, row );
+          left_sum_x += col;
+          left_pixel_count++;
+          }
+        }
+      }
+
+    if ( left_pixel_count > min_pixels )
+      {
+      left_center = left_sum_x / left_pixel_count;
+      }
+
+    // Fenêtre droite.
+    int right_sum_x = 0;
+    int right_pixel_count = 0;
+
+    for ( int row = y_low; row < y_high; ++row )
+      {
+      const uchar* pixel_row = p_bev.ptr< uchar >( row );
+      const int col_begin = ::std::max( 0, right_center - current_margin );
+      const int col_end = ::std::min( width_px, right_center + current_margin );
+
+      for ( int col = col_begin; col < col_end; ++col )
+        {
+        if ( pixel_row[col] > 0 )
+          {
+          pixels.right.emplace_back( col, row );
+          right_sum_x += col;
+          right_pixel_count++;
+          }
+        }
+      }
+
+    if ( right_pixel_count > min_pixels )
+      {
+      right_center = right_sum_x / right_pixel_count;
+      }
+    }
+
+  // Trace debug : pixels gauche en rouge, droite en bleu.
+  ::cv::Mat debug_image;
+  ::cv::cvtColor( p_bev, debug_image, ::cv::COLOR_GRAY2BGR );
+
+  for ( const ::cv::Point& point : pixels.left )
+    {
+    debug_image.at< ::cv::Vec3b >( point ) = COLOR_LEFT_PIXELS;
+    }
+
+  for ( const ::cv::Point& point : pixels.right )
+    {
+    debug_image.at< ::cv::Vec3b >( point ) = COLOR_RIGHT_PIXELS;
+    }
+
+  m_debug_sink.save( "debug_03_windows.jpg", debug_image );
+
+  return pixels;
 }
