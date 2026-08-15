@@ -29,6 +29,7 @@ set(APP_SOURCES
     CaptureFrameSource.cpp
     CliOptions.cpp
     LaneModelLogger.cpp
+    PipelineRunner.cpp
     ResultImageWriter.cpp
     StillImageFrameSource.cpp
 )
