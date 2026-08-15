@@ -5,10 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 find_package( OpenCV REQUIRED )
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
-include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-# Sources partagees entre l'executable et les tests (hors main.cpp).
-# On y ajoute chaque nouveau .cpp au fil des tasks.
+# --- Bibliotheque : pipeline de detection ---
+# Rien ici ne lit argv, n'ecrit sur stdout, ni ne possede de boucle de capture.
 set(LANE_SOURCES
     DetectLines.cpp
     DiskImageSink.cpp
@@ -20,12 +19,17 @@ set(LANE_SOURCES
     LaneOverlay.cpp
 )
 
-add_executable( line_detector main.cpp ${LANE_SOURCES} )
-target_link_libraries( line_detector ${OpenCV_LIBS} )
+add_library( line_detector_lib STATIC ${LANE_SOURCES} )
+target_include_directories( line_detector_lib PUBLIC ${CMAKE_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} )
+target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
+
+# --- Executable ---
+add_executable( line_detector main.cpp )
+target_link_libraries( line_detector PRIVATE line_detector_lib )
 
 # --- Tests unitaires (doctest) ---
 enable_testing()
 file(GLOB TEST_SOURCES tests/test_*.cpp)
-add_executable( line_detector_tests ${TEST_SOURCES} ${LANE_SOURCES} )
+add_executable( line_detector_tests ${TEST_SOURCES} )
 target_include_directories( line_detector_tests PRIVATE ${CMAKE_SOURCE_DIR} tests )
-target_link_libraries( line_detector_tests ${OpenCV_LIBS} )
+target_link_libraries( line_detector_tests PRIVATE line_detector_lib )
