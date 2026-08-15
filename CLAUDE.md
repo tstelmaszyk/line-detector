@@ -8,10 +8,11 @@ Détecteur de lignes de voie routière en C++17, basé sur OpenCV. Il fait passe
 une image dans un pipeline **vue de dessus (bird's eye view) + ajustement
 polynomial** capable de suivre des lignes **courbes**, et produit un **signal de
 pilotage** (offset latéral normalisé + rayon de courbure) destiné à maintenir un
-véhicule entre les lignes. Il vise une configuration avec caméra Raspberry Pi,
-même si `main.cpp` traite actuellement une seule image fixe lue sur le disque
-(l'architecture est prête pour un flux vidéo — cf. roadmap dans
-`docs/superpowers/specs/`).
+véhicule entre les lignes. Il vise une configuration avec caméra Raspberry Pi.
+`main.cpp` traite une image fixe, un fichier vidéo, ou un flux caméra en direct
+(`--image` / `--video` / `--camera`, cf. Compilation & exécution) — le lissage
+temporel (`LaneTracker`) et le passage à une sortie métrique restent au
+programme, cf. roadmap dans `docs/superpowers/specs/`.
 
 ## Compilation & exécution
 
@@ -30,11 +31,21 @@ docker run --rm -v "$(pwd):/app" -w /app line-detector \
 
 Trois modes, mutuellement exclusifs : `--image <chemin>` (défaut : `img_piste/img2.jpg`),
 `--video <chemin>` (fichier vidéo) et `--camera [index]` (défaut `0`). Le mode image
-écrit `out/output.jpg` ; les modes flux écrivent `out/output.avi`. Dans tous les cas,
-une ligne CSV par frame est imprimée sur la sortie standard
-(`frame_index;lane_detected;normalized_offset;lateral_offset_px;curvature_radius_px;reconstructed;elapsed_ms`),
-suivie d'un résumé (frames, détections, ms/frame, FPS). `Ctrl-C` arrête proprement
-la boucle et ferme le fichier vidéo.
+écrit `out/output.jpg` ; les modes flux écrivent `out/output.avi` — la vidéo annotée
+est toujours écrite à une cadence **fixe de 30 fps**, quelle que soit la cadence
+réelle de la source (`FrameSource` n'expose volontairement pas de `fps()`, cf.
+Architecture) ; une vidéo issue d'une source plus lente ou plus rapide que 30 fps
+paraîtra donc accélérée ou ralentie à la relecture — ce n'est pas un bug.
+
+**`stdout` / `stderr` sont séparés** : `stdout` ne porte **que** la ligne d'en-tête
+puis une ligne CSV par frame
+(`frame_index;lane_detected;normalized_offset;lateral_offset_px;curvature_radius_px;reconstructed;elapsed_ms`,
+format `std::fixed`, jamais de notation scientifique) ; `stderr` porte tous les
+messages destinés à un humain (erreurs, résumé final frames/détections/ms/FPS,
+chemin du résultat écrit). Rediriger `stdout` seul suffit donc à consommer le
+signal de pilotage sans parser de texte. `Ctrl-C` arrête proprement la boucle et
+ferme le fichier vidéo ; un second `Ctrl-C` termine toujours le processus, même si
+la lecture caméra est bloquée.
 
 Sur une machine où OpenCV est installé au niveau système, le build générique
 fonctionne aussi (`mkdir build && cd build && cmake .. && make`) ; l'exécutable
@@ -56,8 +67,19 @@ docker run --rm -v "$(pwd):/app" -w /app line-detector \
 
 Chaque composant du pipeline a ses tests ; deux tests bout-en-bout
 (`tests/test_integration.cpp`) exercent tout `DetectLines` sur des images
-synthétiques (dont une courbe qui vérifie que le fit n'est pas aplati). Pas de
-linter ni de CI.
+synthétiques (dont une courbe qui vérifie que le fit n'est pas aplati).
+
+Côté application, chaque composant a aussi sa suite : `test_cli_options.cpp`
+(analyse des arguments, modes et erreurs), `test_frame_source.cpp`
+(`StillImageFrameSource` et `CaptureFrameSource`), `test_frame_observer.cpp`
+(`LaneModelLogger` et `ResultImageWriter`), `test_annotated_video_writer.cpp`
+(écrit un fichier vidéo puis le relit avec `cv::VideoCapture`) et
+`test_pipeline_runner.cpp` (boucle, stats, arrêt anticipé sur drapeau ou sur
+échec définitif d'un observateur). `tests/test_video_integration.cpp` est le
+pendant bout-en-bout du mode flux : une voie qui dérive progressivement passée
+dans `PipelineRunner` complet, qui vérifie que `normalized_offset` évolue de
+façon monotone — la preuve que le mode vidéo *suit* quelque chose, pas
+seulement qu'il tourne sans planter. Pas de linter ni de CI.
 
 ## Architecture
 
@@ -116,9 +138,52 @@ Types clés et possession :
   `LINE_DETECTOR_DEBUG` est défini, sinon `NullImageSink`. Les sinks sont créés
   dans `main` et injectés par référence dans `DetectLines` puis les composants.
 
-Ordre de construction dans `main.cpp` : `VideoCaracteristics` depuis l'image,
-puis `LaneConfig`, puis `DetectLines`, puis `draw_lines` (dont on lit le
-`LaneModel` renvoyé).
+Ordre de construction dans `main.cpp` : `VideoCaracteristics` depuis la
+**première frame lue**, puis `LaneConfig`, puis `DetectLines`. `main` n'appelle
+plus `draw_lines` lui-même : il assemble aussi la `FrameSource` et les
+`FrameObserver`, puis délègue la boucle à `PipelineRunner::run`, qui appelle
+`draw_lines` frame par frame et notifie les observateurs avec le `LaneModel`
+renvoyé (cf. « Couche application » ci-dessous).
+
+### Couche application
+
+Deux cibles CMake matérialisent la frontière :
+
+- **`line_detector_lib`** — le pipeline de détection ci-dessus (étapes 1 à 6 +
+  `ImageSink`). **Règle de frontière, vérifiable en revue :** rien dans
+  `line_detector_lib` ne lit `argv`, n'écrit sur `stdout`, ni ne possède de boucle
+  de capture.
+- **`line_detector_app`** — le harnais : capture, boucle, sorties dev/test. Lie
+  `line_detector_lib`. C'est cette cible que `line_detector` (l'exécutable,
+  `main.cpp` seul) **et** `line_detector_tests` linkent, pour garantir qu'ils
+  exercent exactement le même code.
+
+Composants de `line_detector_app` :
+
+- **`CliOptions` / `parse_arguments`** (`CliOptions.h/.cpp`) — analyse pure des
+  arguments (`argc`/`argv` → `CliOptions`), testable sans lancer de processus.
+  Trois modes mutuellement exclusifs : `--image <chemin>`, `--video <chemin>`,
+  `--camera [index]` (`e_source_kind`). Une valeur manquante ou qui ressemble à
+  un flag après `--image`/`--video` est rejetée (`ERROR_MISSING_VALUE`).
+- **`FrameSource`** (`FrameSource.h`) — interface minimale, un seul `read`.
+  Deux implémentations : **`StillImageFrameSource`** (une image `cv::imread`,
+  rendue une fois — le mode image fixe est un cas dégénéré du mode vidéo) et
+  **`CaptureFrameSource`** (enveloppe `cv::VideoCapture`, fabriques statiques
+  `from_file`/`from_camera`, non copiable).
+- **`FrameObserver`** (`FrameObserver.h`) — interface `on_frame(index, model,
+  annotated_frame, elapsed_ms)`, notifiée à chaque frame par `PipelineRunner`.
+  Trois implémentations : **`LaneModelLogger`** (une ligne CSV par frame sur un
+  `std::ostream` injecté — `main` lui donne `std::cout`), **`ResultImageWriter`**
+  (mode `--image`, écrit via un `ImageSink`) et **`AnnotatedVideoWriter`** (modes
+  flux, `cv::VideoWriter` ouvert paresseusement à la première frame, non
+  copiable). Chaque implémentation qui écrit expose `has_fatal_error()`
+  (par défaut `false` dans l'interface), qui reflète son `has_failed()`.
+- **`PipelineRunner` / `RunStats`** (`PipelineRunner.h/.cpp`) — possède la boucle,
+  et seulement elle : lire → `draw_lines` → notifier les observateurs → compter
+  dans un `RunStats` fourni par l'appelant (accumulé, pas réinitialisé par
+  `run`). S'arrête à la fin du flux, sur le drapeau `SIGINT`, ou dès qu'un
+  observateur signale `has_fatal_error()` — utile pour qu'un `out/` en échec
+  d'écriture soit détecté frame par frame plutôt qu'après coup.
 
 ## Design by contract
 
@@ -146,6 +211,11 @@ Distinction stricte, appliquée dans tout le pipeline :
   détecteur et les observateurs, puis délègue la boucle à `PipelineRunner`. La
   bibliothèque `line_detector_lib` ne lit pas `argv`, n'écrit pas sur `stdout` et ne
   possède aucune boucle : `cv::VideoCapture` vit côté application.
+- **Dossier de sortie** : par défaut `out`, surchargeable par la variable d'environnement
+  `LINE_DETECTOR_OUT`. `cv::imwrite`/`cv::VideoWriter` ne créent pas ce dossier :
+  `main` le crée désormais lui-même (`std::filesystem::create_directories`) avant de
+  construire le moindre sink, donc un `out/` absent n'est plus une raison d'échec —
+  utile en particulier au premier lancement d'une caméra.
 - **Traces de debug en mode flux** : les noms de fichiers sont fixes, donc chaque frame
   écrase la précédente — la dernière frame gagne. Voulu : les traces servent à caler la
   calibration BEV, pas à archiver la séquence.
@@ -166,10 +236,13 @@ Distinction stricte, appliquée dans tout le pipeline :
 - **Code retiré** : l'ancien pipeline Canny/Hough (`grayscal`, `median_blur`,
   `canny_edge_detection`, `hough_lines`, `compute_angle_from_two_points`) et la
   classe `RegionOfInterest` (son trapèze est absorbé par `PerspectiveView`). Le
-  code caméra (`VideoCapture`) avait déjà été retiré.
+  code caméra (`cv::VideoCapture`) avait été retiré puis **réintroduit** côté
+  application par `CaptureFrameSource` (mode `--camera`) : c'est une des
+  fonctionnalités phares de ce lot vidéo.
 
 ## Suite prévue
 
-Voir `docs/superpowers/specs/2026-07-10-roadmap-video-lissage-temporel.md` : mode
-vidéo, `LaneTracker` (lissage temporel / Kalman), recherche autour du fit
-précédent, correction de distorsion caméra, passage métrique.
+Voir `docs/superpowers/specs/2026-07-10-roadmap-video-lissage-temporel.md`. Le
+mode vidéo (fichier + caméra, cf. Couche application ci-dessus) est fait ; reste
+au programme : `LaneTracker` (lissage temporel / Kalman), recherche autour du
+fit précédent, correction de distorsion caméra, passage métrique.
