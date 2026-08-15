@@ -26,7 +26,7 @@ PipelineRunner::PipelineRunner( FrameSource& p_frame_source,
 {
 }
 
-void PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats )
+bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats )
 {
   const ::std::chrono::steady_clock::time_point start_time = ::std::chrono::steady_clock::now();
 
@@ -38,11 +38,19 @@ void PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index,
     ::std::chrono::duration_cast< ::std::chrono::microseconds >( end_time - start_time );
   const double elapsed_ms = static_cast< double >( elapsed_us.count() ) / MICROSECONDS_PER_MILLISECOND;
 
+  bool has_fatal_error = false;
+
   for ( FrameObserver* observer : m_observers )
     {
     if ( nullptr != observer )
       {
       observer->on_frame( p_frame_index, model, annotated_frame, elapsed_ms );
+      const bool observer_has_fatal_error = observer->has_fatal_error();
+
+      if ( observer_has_fatal_error )
+        {
+        has_fatal_error = true;
+        }
       }
     }
 
@@ -58,11 +66,14 @@ void PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index,
     {
     ++p_stats.reconstructed_count;
     }
+
+  return has_fatal_error;
 }
 
 int PipelineRunner::run( const ::cv::Mat& p_first_frame, RunStats& p_stats )
 {
   ::cv::Mat current_frame = p_first_frame;
+  ::cv::Mat next_frame;
   int frame_index = 0;
 
   while ( true )
@@ -74,8 +85,13 @@ int PipelineRunner::run( const ::cv::Mat& p_first_frame, RunStats& p_stats )
       break;
       }
 
-    process_frame( current_frame, frame_index, p_stats );
+    const bool observer_has_fatal_error = process_frame( current_frame, frame_index, p_stats );
     ++frame_index;
+
+    if ( observer_has_fatal_error )
+      {
+      break;
+      }
 
     // Un arret demande est constate apres la frame en cours, pour ne pas la perdre.
     const bool stop_after_frame = m_stop_requested.load();
@@ -85,7 +101,6 @@ int PipelineRunner::run( const ::cv::Mat& p_first_frame, RunStats& p_stats )
       break;
       }
 
-    ::cv::Mat next_frame;
     const bool read_ok = m_frame_source.read( next_frame );
 
     if ( !read_ok )

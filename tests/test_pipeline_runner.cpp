@@ -105,6 +105,40 @@ class FakeFrameObserver : public FrameObserver
     ::std::vector< int > m_indices;  ///< Index recus.
   };
 
+/// @brief Observateur factice signalant un echec definitif des la premiere frame.
+class FatalAfterFirstFrameObserver : public FrameObserver
+  {
+  public:
+    /// @brief Construit l'observateur.
+    FatalAfterFirstFrameObserver()
+      : m_frames_seen( 0 )
+      {
+      }
+
+    /// @brief Compte la frame recue.
+    void on_frame( int p_frame_index,
+                   const LaneModel& p_model,
+                   const ::cv::Mat& p_annotated_frame,
+                   double p_elapsed_ms ) override
+      {
+      (void) p_frame_index;
+      (void) p_model;
+      (void) p_annotated_frame;
+      (void) p_elapsed_ms;
+      ++m_frames_seen;
+      }
+
+    /// @brief En echec des qu'au moins une frame a ete traitee.
+    bool has_fatal_error() const override
+      {
+      const bool at_least_one_frame = ( 0 < m_frames_seen );
+      return at_least_one_frame;
+      }
+
+  private:
+    int m_frames_seen;  ///< Nombre de frames recues.
+  };
+
 } // namespace
 
 TEST_CASE( "PipelineRunner : traite toutes les frames et compte les stats" )
@@ -182,4 +216,28 @@ TEST_CASE( "PipelineRunner : premiere frame vide -> echec" )
 
   CHECK( EXIT_FAILURE == status );
   CHECK( 0 == stats.frame_count );
+}
+
+TEST_CASE( "PipelineRunner : observateur en echec definitif -> arret anticipe" )
+{
+  const ::cv::Mat first_frame = make_lane_frame( RUNNER_LEFT_LINE_X, RUNNER_RIGHT_LINE_X );
+  VideoCaracteristics video( first_frame );
+  LaneConfig config;
+  config.default_lane_width_px = RUNNER_TEST_WIDTH * RUNNER_LANE_WIDTH_RATIO;
+  NullImageSink debug_sink;
+  const DetectLines detector( video, config, debug_sink );
+
+  // La source pourrait servir davantage de frames que ce que le runner ne traite.
+  FakeFrameSource source( RUNNER_TEST_FRAME_COUNT - 1 );
+  FatalAfterFirstFrameObserver observer;
+  ::std::vector< FrameObserver* > observers;
+  observers.push_back( &observer );
+  const ::std::atomic< bool > stop_requested( false );
+
+  PipelineRunner runner( source, detector, observers, stop_requested );
+  RunStats stats;
+  const int status = runner.run( first_frame, stats );
+
+  CHECK( EXIT_SUCCESS == status );
+  CHECK( 1 == stats.frame_count );
 }

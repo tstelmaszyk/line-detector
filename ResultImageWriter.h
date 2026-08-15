@@ -38,6 +38,10 @@ class ResultImageWriter : public FrameObserver
     /// @return true si au moins une écriture a échoué.
     bool has_failed() const;
 
+    /// @brief Indique si l'écriture est dans un état d'échec définitif.
+    /// @return has_failed().
+    bool has_fatal_error() const override { return has_failed(); }
+
   private:
     ImageSink& m_image_sink;      ///< Destination d'écriture.
     ::std::string m_file_name;    ///< Nom du fichier résultat.

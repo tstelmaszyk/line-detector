@@ -31,9 +31,10 @@ class PipelineRunner
                     const ::std::vector< FrameObserver* >& p_observers,
                     const ::std::atomic< bool >& p_stop_requested );
 
-    /// @brief Exécute la boucle jusqu'à la fin du flux ou l'arrêt demandé.
+    /// @brief Exécute la boucle jusqu'à la fin du flux, l'arrêt demandé, ou
+    /// l'échec définitif d'un observateur.
     /// @param p_first_frame Première frame, déjà lue par l'appelant.
-    /// @param p_stats       Statistiques remplies en sortie.
+    /// @param p_stats       Statistiques accumulées par l'appel (struct fraîche attendue).
     /// @return EXIT_SUCCESS si au moins une frame a été traitée, EXIT_FAILURE sinon.
     int run( const ::cv::Mat& p_first_frame, RunStats& p_stats );
 
@@ -42,7 +43,8 @@ class PipelineRunner
     /// @param p_frame       Frame à traiter.
     /// @param p_frame_index Index de la frame.
     /// @param p_stats       Statistiques mises à jour.
-    void process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats );
+    /// @return true si un observateur signale un échec définitif après cette frame.
+    bool process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats );
 
     FrameSource& m_frame_source;                      ///< Source de frames.
     const DetectLines& m_detector;                    ///< Pipeline de détection.

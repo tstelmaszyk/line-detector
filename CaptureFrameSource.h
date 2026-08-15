@@ -29,6 +29,12 @@ class CaptureFrameSource : public FrameSource
     /// @return Source construite (vérifier is_opened()).
     static ::std::unique_ptr< CaptureFrameSource > from_camera( int p_camera_index );
 
+    /// @brief Non copiable : possède une cv::VideoCapture ouverte sur une ressource.
+    CaptureFrameSource( const CaptureFrameSource& p_other ) = delete;
+
+    /// @brief Non copiable : possède une cv::VideoCapture ouverte sur une ressource.
+    CaptureFrameSource& operator=( const CaptureFrameSource& p_other ) = delete;
+
     /// @brief Indique si la capture est ouverte.
     /// @return true si la source est exploitable.
     bool is_opened() const;

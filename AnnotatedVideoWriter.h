@@ -25,6 +25,12 @@ class AnnotatedVideoWriter : public FrameObserver
     /// @param p_frames_per_second  Cadence déclarée dans le fichier.
     AnnotatedVideoWriter( ::std::string p_output_path, double p_frames_per_second );
 
+    /// @brief Non copiable : possède un cv::VideoWriter ouvert sur un fichier.
+    AnnotatedVideoWriter( const AnnotatedVideoWriter& p_other ) = delete;
+
+    /// @brief Non copiable : possède un cv::VideoWriter ouvert sur un fichier.
+    AnnotatedVideoWriter& operator=( const AnnotatedVideoWriter& p_other ) = delete;
+
     /// @brief Ferme proprement le fichier.
     ~AnnotatedVideoWriter() override;
 
@@ -38,9 +44,13 @@ class AnnotatedVideoWriter : public FrameObserver
                    const ::cv::Mat& p_annotated_frame,
                    double p_elapsed_ms ) override;
 
-    /// @brief Indique si l'ouverture ou une écriture a échoué.
+    /// @brief Indique si l'ouverture a échoué ou si une frame vide a été reçue.
     /// @return true en cas d'échec.
     bool has_failed() const;
+
+    /// @brief Indique si l'écriture est dans un état d'échec définitif.
+    /// @return has_failed().
+    bool has_fatal_error() const override { return has_failed(); }
 
   private:
     ::std::string m_output_path;      ///< Chemin du fichier vidéo.

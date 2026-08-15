@@ -26,4 +26,8 @@ class FrameObserver
                            const LaneModel& p_model,
                            const ::cv::Mat& p_annotated_frame,
                            double p_elapsed_ms ) = 0;
+
+    /// @brief Indique si l'observateur est dans un état d'échec définitif.
+    /// @return false par défaut ; les observateurs qui écrivent en sortie le redéfinissent.
+    virtual bool has_fatal_error() const { return false; }
   };
