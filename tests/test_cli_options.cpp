@@ -161,3 +161,14 @@ TEST_CASE( "parse_arguments : index camera non numerique -> echec" )
   CHECK( EXIT_FAILURE == status );
   CHECK( !options.error_message.empty() );
 }
+
+TEST_CASE( "parse_arguments : index camera hors plage -> echec" )
+{
+  ArgumentVector arguments( { "line_detector", "--camera", "99999999999999999999" } );
+  CliOptions options;
+
+  const int status = parse_arguments( arguments.count(), arguments.values(), options );
+
+  CHECK( EXIT_FAILURE == status );
+  CHECK( !options.error_message.empty() );
+}

@@ -1,6 +1,8 @@
 /// @file
 /// @brief Implémentation de l'analyse des arguments de ligne de commande.
 
+#include <cerrno>
+#include <climits>
 #include <cstdlib>
 #include <string>
 
@@ -97,13 +99,17 @@ int parse_arguments( int p_argument_count, char** p_arguments, CliOptions& p_opt
 
         if ( !next_is_flag )
           {
+          errno = 0;
           char* conversion_end = nullptr;
           const long converted_index =
             ::std::strtol( next_argument.c_str(), &conversion_end, DECIMAL_BASE );
           const bool conversion_ok =
             ( ( nullptr != conversion_end ) && ( '\0' == *conversion_end ) && !next_argument.empty() );
+          const bool has_range_error = ( ERANGE == errno );
+          const bool exceeds_int_max = ( INT_MAX < converted_index );
+          const bool exceeds_int_min = ( INT_MIN > converted_index );
 
-          if ( !conversion_ok )
+          if ( !conversion_ok || has_range_error || exceeds_int_max || exceeds_int_min )
             {
             p_options.error_message = ERROR_CAMERA_INDEX + next_argument;
             return EXIT_FAILURE;
