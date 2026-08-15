@@ -74,3 +74,45 @@ TEST_CASE( "AnnotatedVideoWriter : chemin invalide -> echec signale" )
 
   CHECK( true == failed );
 }
+
+TEST_CASE( "AnnotatedVideoWriter : apres un echec, plus aucune frame n'est ecrite" )
+{
+  const ::std::string video_path = test_temp_dir() + "/annotated_writer_apres_echec.avi";
+  const ::cv::Scalar fill_color( VIDEO_TEST_GRAY, VIDEO_TEST_GRAY, VIDEO_TEST_GRAY );
+  const ::cv::Mat valid_frame( VIDEO_TEST_HEIGHT, VIDEO_TEST_WIDTH, CV_8UC3, fill_color );
+  const ::cv::Mat empty_frame;
+  LaneModel model;
+
+    {
+    AnnotatedVideoWriter writer( video_path, VIDEO_TEST_FPS );
+
+    // Une frame vide met le writer en echec...
+    writer.on_frame( 0, model, empty_frame, VIDEO_TEST_MS );
+
+    // ... et la frame valide suivante ne doit plus rien ecrire.
+    writer.on_frame( 1, model, valid_frame, VIDEO_TEST_MS );
+
+    const bool failed = writer.has_failed();
+    CHECK( true == failed );
+    }
+
+  // Aucune frame ecrite : le fichier est absent ou illisible.
+  ::cv::VideoCapture capture( video_path );
+  const bool opened = capture.isOpened();
+
+  int read_count = 0;
+
+  if ( true == opened )
+    {
+    ::cv::Mat read_frame;
+    bool read_ok = capture.read( read_frame );
+
+    while ( read_ok )
+      {
+      ++read_count;
+      read_ok = capture.read( read_frame );
+      }
+    }
+
+  CHECK( 0 == read_count );
+}

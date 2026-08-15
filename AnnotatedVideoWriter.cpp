@@ -39,6 +39,12 @@ void AnnotatedVideoWriter::on_frame( int p_frame_index,
   (void) p_model;
   (void) p_elapsed_ms;
 
+  // Un echec est definitif : on n'ecrit plus rien et on ne retente pas l'ouverture.
+  if ( true == m_has_failed )
+    {
+    return;
+    }
+
   const bool frame_is_empty = p_annotated_frame.empty();
 
   if ( frame_is_empty )
