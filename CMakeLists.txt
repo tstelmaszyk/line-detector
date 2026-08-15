@@ -26,6 +26,7 @@ target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 # --- Bibliotheque applicative : capture, boucle, sorties dev/test ---
 set(APP_SOURCES
     CliOptions.cpp
+    StillImageFrameSource.cpp
 )
 
 add_library( line_detector_app STATIC ${APP_SOURCES} )
