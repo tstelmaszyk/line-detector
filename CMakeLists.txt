@@ -23,13 +23,23 @@ add_library( line_detector_lib STATIC ${LANE_SOURCES} )
 target_include_directories( line_detector_lib PUBLIC ${CMAKE_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 
+# --- Bibliotheque applicative : capture, boucle, sorties dev/test ---
+set(APP_SOURCES
+    CliOptions.cpp
+)
+
+add_library( line_detector_app STATIC ${APP_SOURCES} )
+target_include_directories( line_detector_app PUBLIC ${CMAKE_SOURCE_DIR} )
+target_link_libraries( line_detector_app PUBLIC line_detector_lib )
+target_compile_options( line_detector_app PRIVATE -Wall -Wextra )
+
 # --- Executable ---
 add_executable( line_detector main.cpp )
-target_link_libraries( line_detector PRIVATE line_detector_lib )
+target_link_libraries( line_detector PRIVATE line_detector_app )
 
 # --- Tests unitaires (doctest) ---
 enable_testing()
 file(GLOB TEST_SOURCES tests/test_*.cpp)
 add_executable( line_detector_tests ${TEST_SOURCES} )
 target_include_directories( line_detector_tests PRIVATE ${CMAKE_SOURCE_DIR} tests )
-target_link_libraries( line_detector_tests PRIVATE line_detector_lib )
+target_link_libraries( line_detector_tests PRIVATE line_detector_app )
