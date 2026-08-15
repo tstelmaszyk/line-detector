@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <string>
 
+#ifndef LINE_DETECTOR_TEST_TMP_DEFAULT
+#define LINE_DETECTOR_TEST_TMP_DEFAULT "."
+#endif
+
 /// @brief Variable d'environnement du dossier temporaire des tests.
 static const ::std::string TEST_TMP_ENV_VAR = "LINE_DETECTOR_TEST_TMP";
 
@@ -13,7 +17,9 @@ static const ::std::string TEST_TMP_ENV_VAR = "LINE_DETECTOR_TEST_TMP";
 static const ::std::string SYSTEM_TMP_ENV_VAR = "TMPDIR";
 
 /// @brief Dossier de repli si aucune variable d'environnement n'est definie.
-static const ::std::string FALLBACK_TMP_DIR = ".";
+/// Valeur injectee par CMake (dossier de build) via LINE_DETECTOR_TEST_TMP_DEFAULT ;
+/// "." seulement si le define est absent (hors build CMake normal).
+static const ::std::string FALLBACK_TMP_DIR = LINE_DETECTOR_TEST_TMP_DEFAULT;
 
 /// @brief Donne le dossier ou les tests ecrivent leurs fichiers temporaires.
 /// @return Chemin de dossier, sans separateur final.

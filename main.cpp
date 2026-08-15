@@ -102,6 +102,11 @@ void handle_interrupt( int p_signal_number )
 
 } // namespace
 
+/// @brief Point d'entrée : assemble la source, le détecteur et les observateurs,
+/// puis délègue la boucle au PipelineRunner.
+/// @param argc Nombre d'arguments.
+/// @param argv Arguments de la ligne de commande.
+/// @return EXIT_SUCCESS si le traitement s'est terminé normalement, EXIT_FAILURE sinon.
 int main( int argc, char** argv )
 {
   // 1. Analyse des arguments.

@@ -49,3 +49,7 @@ file(GLOB TEST_SOURCES tests/test_*.cpp)
 add_executable( line_detector_tests ${TEST_SOURCES} )
 target_include_directories( line_detector_tests PRIVATE ${CMAKE_SOURCE_DIR} tests )
 target_link_libraries( line_detector_tests PRIVATE line_detector_app )
+
+# Les tests ecrivent leurs fichiers temporaires dans le dossier de build, jamais
+# dans le depot. LINE_DETECTOR_TEST_TMP et TMPDIR restent prioritaires.
+target_compile_definitions( line_detector_tests PRIVATE LINE_DETECTOR_TEST_TMP_DEFAULT="${CMAKE_BINARY_DIR}" )
