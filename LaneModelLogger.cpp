@@ -1,0 +1,50 @@
+/// @file
+/// @brief Implémentation de LaneModelLogger.
+
+#include <ostream>
+#include <string>
+
+#include "LaneModel.h"
+#include "LaneModelLogger.h"
+
+namespace
+{
+
+const char FIELD_SEPARATOR = ';';  ///< Séparateur de champs.
+
+const ::std::string CSV_HEADER =
+  "frame_index;lane_detected;normalized_offset;lateral_offset_px;"
+  "curvature_radius_px;reconstructed;elapsed_ms";  ///< En-tête du log.
+
+} // namespace
+
+LaneModelLogger::LaneModelLogger( ::std::ostream& p_output_stream )
+  : m_output_stream( p_output_stream ),
+    m_header_written( false )
+{
+}
+
+void LaneModelLogger::on_frame( int p_frame_index,
+                                const LaneModel& p_model,
+                                const ::cv::Mat& p_annotated_frame,
+                                double p_elapsed_ms )
+{
+  (void) p_annotated_frame;
+
+  if ( !m_header_written )
+    {
+    m_output_stream << CSV_HEADER << "\n";
+    m_header_written = true;
+    }
+
+  const int lane_detected_flag = p_model.lane_detected ? 1 : 0;
+  const int reconstructed_flag = p_model.reconstructed ? 1 : 0;
+
+  m_output_stream << p_frame_index << FIELD_SEPARATOR
+                  << lane_detected_flag << FIELD_SEPARATOR
+                  << p_model.normalized_offset << FIELD_SEPARATOR
+                  << p_model.lateral_offset_px << FIELD_SEPARATOR
+                  << p_model.curvature_radius_px << FIELD_SEPARATOR
+                  << reconstructed_flag << FIELD_SEPARATOR
+                  << p_elapsed_ms << "\n";
+}

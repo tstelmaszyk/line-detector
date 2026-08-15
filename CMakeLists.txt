@@ -27,6 +27,8 @@ target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 set(APP_SOURCES
     CaptureFrameSource.cpp
     CliOptions.cpp
+    LaneModelLogger.cpp
+    ResultImageWriter.cpp
     StillImageFrameSource.cpp
 )
 
