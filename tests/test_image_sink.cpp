@@ -57,7 +57,7 @@ TEST_CASE( "DiskImageSink : is_enabled renvoie true" )
   CHECK( true == enabled );
 }
 
-TEST_CASE( "DetectLines::draw_lines : meme LaneModel avec un NullImageSink" )
+TEST_CASE( "DetectLines::compute : meme LaneModel avec un NullImageSink" )
 {
   const ::cv::Mat frame = make_lane_frame();
   VideoCaracteristics video( frame );
@@ -66,8 +66,7 @@ TEST_CASE( "DetectLines::draw_lines : meme LaneModel avec un NullImageSink" )
   NullImageSink sink;
   const DetectLines detector( video, config, sink );
 
-  ::cv::Mat out;
-  const LaneModel model = detector.draw_lines( frame, out );
+  const LaneModel model = detector.compute( frame );
 
   REQUIRE( model.lane_detected );
   CHECK( ::std::abs( model.normalized_offset ) < SINK_OFFSET_TOLERANCE );

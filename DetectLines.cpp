@@ -33,13 +33,12 @@ DetectLines::DetectLines( const VideoCaracteristics& p_video,
 {
 }
 
-LaneModel DetectLines::draw_lines( const ::cv::Mat& p_frame_to_compute,
-                                   ::cv::Mat& p_frame_with_lines ) const
+LaneModel DetectLines::compute( const ::cv::Mat& p_frame ) const
 {
   const bool debug_enabled = m_debug_sink.is_enabled();
 
   ::cv::Mat binary;
-  m_mask.compute( p_frame_to_compute, binary );
+  m_mask.compute( p_frame, binary );
 
   ::cv::Mat bev;
   m_perspective.to_bev( binary, bev );
@@ -49,7 +48,7 @@ LaneModel DetectLines::draw_lines( const ::cv::Mat& p_frame_to_compute,
     m_debug_sink.save( "debug_02_bev.jpg", bev );
 
     // Debug calibration BEV : trapèze source sur l'image couleur + warp couleur.
-    ::cv::Mat trapeze = p_frame_to_compute.clone();
+    ::cv::Mat trapeze = p_frame.clone();
     const ::std::vector< ::cv::Point2f >& quad = m_perspective.source_quad();
 
     ::std::vector< ::cv::Point > trapeze_polygon;
@@ -66,7 +65,7 @@ LaneModel DetectLines::draw_lines( const ::cv::Mat& p_frame_to_compute,
     m_debug_sink.save( "debug_02a_trapeze.jpg", trapeze );
 
     ::cv::Mat bev_color;
-    m_perspective.to_bev( p_frame_to_compute, bev_color );
+    m_perspective.to_bev( p_frame, bev_color );
     m_debug_sink.save( "debug_02b_bev_color.jpg", bev_color );
     }
 
@@ -104,6 +103,12 @@ LaneModel DetectLines::draw_lines( const ::cv::Mat& p_frame_to_compute,
     m_debug_sink.save( "debug_04_fit.jpg", fit_debug );
     }
 
-  m_overlay.render( p_frame_to_compute, model, p_frame_with_lines );
   return model;
+}
+
+void DetectLines::render( const ::cv::Mat& p_frame,
+                          const LaneModel& p_model,
+                          ::cv::Mat& p_output ) const
+{
+  m_overlay.render( p_frame, p_model, p_output );
 }

@@ -27,11 +27,21 @@ class DetectLines
                  const LaneConfig& p_config,
                  ImageSink& p_debug_sink );
 
-    /// @brief Exécute le pipeline complet.
-    /// @param p_frame_to_compute Image d'entrée BGR.
-    /// @param p_frame_with_lines Image de sortie annotée.
+    /// @brief Calcule le modèle de voie. Aucun rendu, aucune image de sortie.
+    /// @param p_frame Image d'entrée BGR.
     /// @return Modèle de voie (signal de pilotage).
-    LaneModel draw_lines( const ::cv::Mat& p_frame_to_compute, ::cv::Mat& p_frame_with_lines ) const;
+    LaneModel compute( const ::cv::Mat& p_frame ) const;
+
+    /// @brief Dessine un modèle déjà calculé sur l'image d'origine.
+    ///
+    /// Le modèle n'est pas nécessairement celui de p_frame : un modèle lissé
+    /// dans le temps peut être dessiné sur la frame courante.
+    /// @param p_frame  Image d'origine BGR.
+    /// @param p_model  Modèle à dessiner.
+    /// @param p_output Image annotée produite.
+    void render( const ::cv::Mat& p_frame,
+                 const LaneModel& p_model,
+                 ::cv::Mat& p_output ) const;
 
   private:
     const VideoCaracteristics m_video_properties;  ///< Caractéristiques image.

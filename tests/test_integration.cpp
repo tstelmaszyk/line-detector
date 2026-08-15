@@ -30,8 +30,7 @@ TEST_CASE( "pipeline complet : voie symetrique -> offset proche de zero" )
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 
-  ::cv::Mat out;
-  const LaneModel model = detector.draw_lines( img, out );
+  const LaneModel model = detector.compute( img );
 
   REQUIRE( model.lane_detected );
   CHECK( ::std::abs( model.normalized_offset ) < 0.15 );
@@ -48,8 +47,7 @@ TEST_CASE( "pipeline complet : voie decalee a droite -> offset negatif" )
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 
-  ::cv::Mat out;
-  const LaneModel model = detector.draw_lines( img, out );
+  const LaneModel model = detector.compute( img );
 
   REQUIRE( model.lane_detected );
   CHECK( model.normalized_offset < 0.0 );

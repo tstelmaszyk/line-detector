@@ -31,7 +31,8 @@ bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index,
   const ::std::chrono::steady_clock::time_point start_time = ::std::chrono::steady_clock::now();
 
   ::cv::Mat annotated_frame;
-  const LaneModel model = m_detector.draw_lines( p_frame, annotated_frame );
+  const LaneModel model = m_detector.compute( p_frame );
+  m_detector.render( p_frame, model, annotated_frame );
 
   const ::std::chrono::steady_clock::time_point end_time = ::std::chrono::steady_clock::now();
   const ::std::chrono::microseconds elapsed_us =
