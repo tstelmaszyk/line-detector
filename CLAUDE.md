@@ -25,8 +25,16 @@ Compiler l'exécutable et lancer sur une image, en montant la source :
 ```sh
 docker run --rm -v "$(pwd):/app" -w /app line-detector \
   bash -c 'cmake -S /app -B /tmp/build && cmake --build /tmp/build --target line_detector -j \
-           && mkdir -p /app/out && cd /app && /tmp/build/line_detector img_piste/img2.jpg'
+           && mkdir -p /app/out && cd /app && /tmp/build/line_detector --image img_piste/img2.jpg'
 ```
+
+Trois modes, mutuellement exclusifs : `--image <chemin>` (défaut : `img_piste/img2.jpg`),
+`--video <chemin>` (fichier vidéo) et `--camera [index]` (défaut `0`). Le mode image
+écrit `out/output.jpg` ; les modes flux écrivent `out/output.avi`. Dans tous les cas,
+une ligne CSV par frame est imprimée sur la sortie standard
+(`frame_index;lane_detected;normalized_offset;lateral_offset_px;curvature_radius_px;reconstructed;elapsed_ms`),
+suivie d'un résumé (frames, détections, ms/frame, FPS). `Ctrl-C` arrête proprement
+la boucle et ferme le fichier vidéo.
 
 Sur une machine où OpenCV est installé au niveau système, le build générique
 fonctionne aussi (`mkdir build && cd build && cmake .. && make`) ; l'exécutable
@@ -132,13 +140,15 @@ Distinction stricte, appliquée dans tout le pipeline :
 - Le **nouveau code qualifie explicitement `cv::`**. Certains en-têtes hérités
   contiennent encore `using namespace cv;`.
 - Les réglages ne sont plus des consts éparpillées : ils vivent dans **`LaneConfig`**.
-- `main.cpp` lit l'image d'entrée via un **chemin en argument** (`argv[1]`, défaut
-  `img_piste/img2.jpg`). Le **dossier de sortie est codé en dur** (`out`) ; le
-  résultat est écrit sous `out/output.jpg` via un **`ImageSink`** injecté (pas
-  d'`imwrite` direct — pour tourner sans écran, en conteneur). `cv::imwrite` ne
-  crée pas le dossier : `out/` doit exister (montage Docker ou `mkdir -p out`).
-  `main` fixe `config.defaultLaneWidthPx` (repli grossier ; à caler depuis la
-  calibration BEV pour un usage réel).
+- `main.cpp` n'est plus qu'un assemblage : il analyse les arguments (`parse_arguments`),
+  construit la `FrameSource`, lit la **première frame** (c'est elle qui définit
+  `VideoCaracteristics`, jamais les métadonnées de `cv::VideoCapture`), construit le
+  détecteur et les observateurs, puis délègue la boucle à `PipelineRunner`. La
+  bibliothèque `line_detector_lib` ne lit pas `argv`, n'écrit pas sur `stdout` et ne
+  possède aucune boucle : `cv::VideoCapture` vit côté application.
+- **Traces de debug en mode flux** : les noms de fichiers sont fixes, donc chaque frame
+  écrase la précédente — la dernière frame gagne. Voulu : les traces servent à caler la
+  calibration BEV, pas à archiver la séquence.
 - **Calibration BEV** : les 4 points source dérivent des ratios
   `srcTopWidthRatio` / `srcTopYRatio` / `bevMarginRatio` de `LaneConfig`. La régler
   en inspectant `out/debug_02_bev.jpg` jusqu'à ce que des lignes droites
