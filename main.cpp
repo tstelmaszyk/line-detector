@@ -6,6 +6,7 @@
 #include <atomic>
 #include <csignal>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -44,13 +45,36 @@ const double MILLISECONDS_PER_SECOND = 1000.0;               ///< Conversion ms 
 const ::std::string USAGE_MESSAGE =
   "Usage : line_detector [--image <chemin> | --video <chemin> | --camera [index]]";  ///< Aide.
 
+const ::std::string MESSAGE_UNABLE_TO_OPEN_SOURCE =
+  "Impossible d'ouvrir la source demandee.";                             ///< Source non ouverte.
+const ::std::string MESSAGE_NO_READABLE_FRAME =
+  "Aucune frame lisible dans la source.";                                ///< Source vide.
+const ::std::string MESSAGE_NO_FRAME_PROCESSED = "Aucune frame traitee.";  ///< Boucle vide.
+const ::std::string MESSAGE_IMAGE_WRITE_FAILED_PREFIX =
+  "Impossible d'ecrire l'image de sortie : ";                            ///< Echec ecriture image.
+const ::std::string MESSAGE_VIDEO_WRITE_FAILED_PREFIX =
+  "Impossible d'ecrire la video de sortie : ";                           ///< Echec ecriture video.
+const ::std::string MESSAGE_SUMMARY_FRAMES_PREFIX = "Frames : ";                    ///< Resume : frames.
+const ::std::string MESSAGE_SUMMARY_DETECTED_PREFIX = " | detectees : ";            ///< Resume : detections.
+const ::std::string MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX = " | reconstruites : ";   ///< Resume : reconstructions.
+const ::std::string MESSAGE_SUMMARY_AVERAGE_PREFIX = " | moyenne : ";               ///< Resume : moyenne ms.
+const ::std::string MESSAGE_SUMMARY_MS_PER_FRAME_SUFFIX = " ms/frame";              ///< Resume : suffixe ms/frame.
+const ::std::string MESSAGE_SUMMARY_FPS_PREFIX = " (";                              ///< Resume : ouverture FPS.
+const ::std::string MESSAGE_SUMMARY_FPS_SUFFIX = " FPS)";                           ///< Resume : fermeture FPS.
+const ::std::string MESSAGE_RESULT_WRITTEN_PREFIX = "Resultat ecrit dans : ";       ///< Resume : chemin resultat.
+
 /// @brief Drapeau d'arrêt levé par le handler SIGINT.
 ::std::atomic< bool > g_stop_requested( false );
 
 /// @brief Handler SIGINT : demande l'arrêt de la boucle (fermeture propre des sorties).
+///
+/// Restaure d'abord l'action par défaut : un second Ctrl-C doit toujours pouvoir
+/// terminer le processus, meme si VideoCapture::read est bloque sur une camera
+/// debranchee et ne revient jamais tester g_stop_requested.
 /// @param p_signal_number Numéro du signal reçu.
 void handle_interrupt( int p_signal_number )
   {
+  ::std::signal( SIGINT, SIG_DFL );
   (void) p_signal_number;
   g_stop_requested.store( true );
   }
@@ -115,8 +139,8 @@ int main( int argc, char** argv )
 
   if ( EXIT_SUCCESS != parse_status )
     {
-    ::std::cout << options.error_message << ::std::endl;
-    ::std::cout << USAGE_MESSAGE << ::std::endl;
+    ::std::cerr << options.error_message << ::std::endl;
+    ::std::cerr << USAGE_MESSAGE << ::std::endl;
     return EXIT_FAILURE;
     }
 
@@ -125,7 +149,7 @@ int main( int argc, char** argv )
 
   if ( nullptr == frame_source )
     {
-    ::std::cout << "Impossible d'ouvrir la source demandee." << ::std::endl;
+    ::std::cerr << MESSAGE_UNABLE_TO_OPEN_SOURCE << ::std::endl;
     return EXIT_FAILURE;
     }
 
@@ -135,13 +159,17 @@ int main( int argc, char** argv )
 
   if ( !first_read_ok )
     {
-    ::std::cout << "Aucune frame lisible dans la source." << ::std::endl;
+    ::std::cerr << MESSAGE_NO_READABLE_FRAME << ::std::endl;
     return EXIT_FAILURE;
     }
 
   // 4. Dossier de sortie et traces de debug.
   const char* output_dir_env = ::std::getenv( OUTPUT_DIR_ENV_VAR );
   const ::std::string output_dir = ( nullptr != output_dir_env ) ? output_dir_env : DEFAULT_OUTPUT_DIR;
+
+  // cv::imwrite ne cree pas le dossier de sortie : on le cree ici, avant tout sink.
+  // Un dossier deja existant n'est pas une erreur ; la valeur de retour est ignoree.
+  ::std::filesystem::create_directories( output_dir );
 
   const char* debug_env = ::std::getenv( DEBUG_ENV_VAR );
   const bool debug_enabled = ( nullptr != debug_env ) && ( '\0' != debug_env[0] );
@@ -199,7 +227,7 @@ int main( int argc, char** argv )
 
   if ( EXIT_SUCCESS != run_status )
     {
-    ::std::cout << "Aucune frame traitee." << ::std::endl;
+    ::std::cerr << MESSAGE_NO_FRAME_PROCESSED << ::std::endl;
     return EXIT_FAILURE;
     }
 
@@ -209,14 +237,14 @@ int main( int argc, char** argv )
 
   if ( image_failed )
     {
-    ::std::cout << "Impossible d'ecrire l'image de sortie : "
+    ::std::cerr << MESSAGE_IMAGE_WRITE_FAILED_PREFIX
                 << output_dir << PATH_SEPARATOR << OUTPUT_IMAGE_NAME << ::std::endl;
     return EXIT_FAILURE;
     }
 
   if ( video_failed )
     {
-    ::std::cout << "Impossible d'ecrire la video de sortie : " << video_path << ::std::endl;
+    ::std::cerr << MESSAGE_VIDEO_WRITE_FAILED_PREFIX << video_path << ::std::endl;
     return EXIT_FAILURE;
     }
 
@@ -224,14 +252,15 @@ int main( int argc, char** argv )
   const double average_ms = stats.total_ms / static_cast< double >( stats.frame_count );
   const double frames_per_second = MILLISECONDS_PER_SECOND / average_ms;
 
-  ::std::cout << "Frames : " << stats.frame_count
-              << " | detectees : " << stats.detected_count
-              << " | reconstruites : " << stats.reconstructed_count
-              << " | moyenne : " << average_ms << " ms/frame"
-              << " (" << frames_per_second << " FPS)" << ::std::endl;
+  ::std::cerr << MESSAGE_SUMMARY_FRAMES_PREFIX << stats.frame_count
+              << MESSAGE_SUMMARY_DETECTED_PREFIX << stats.detected_count
+              << MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX << stats.reconstructed_count
+              << MESSAGE_SUMMARY_AVERAGE_PREFIX << average_ms << MESSAGE_SUMMARY_MS_PER_FRAME_SUFFIX
+              << MESSAGE_SUMMARY_FPS_PREFIX << frames_per_second << MESSAGE_SUMMARY_FPS_SUFFIX
+              << ::std::endl;
 
   const ::std::string result_name = is_still_image ? OUTPUT_IMAGE_NAME : OUTPUT_VIDEO_NAME;
-  ::std::cout << "Resultat ecrit dans : " << output_dir << PATH_SEPARATOR << result_name << ::std::endl;
+  ::std::cerr << MESSAGE_RESULT_WRITTEN_PREFIX << output_dir << PATH_SEPARATOR << result_name << ::std::endl;
 
   return EXIT_SUCCESS;
 }

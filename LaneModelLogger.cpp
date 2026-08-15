@@ -1,6 +1,7 @@
 /// @file
 /// @brief Implémentation de LaneModelLogger.
 
+#include <iomanip>
 #include <ostream>
 #include <string>
 
@@ -16,12 +17,17 @@ const ::std::string CSV_HEADER =
   "frame_index;lane_detected;normalized_offset;lateral_offset_px;"
   "curvature_radius_px;reconstructed;elapsed_ms";  ///< En-tête du log.
 
+const ::std::streamsize CSV_FIELD_PRECISION = 6;  ///< Decimales des champs flottants (format fixe).
+
 } // namespace
 
 LaneModelLogger::LaneModelLogger( ::std::ostream& p_output_stream )
   : m_output_stream( p_output_stream ),
     m_header_written( false )
 {
+  // Format fixe a precision constante : evite le bascule en notation
+  // scientifique sur un grand curvature_radius_px et stabilise les colonnes.
+  m_output_stream << ::std::fixed << ::std::setprecision( CSV_FIELD_PRECISION );
 }
 
 void LaneModelLogger::on_frame( int p_frame_index,

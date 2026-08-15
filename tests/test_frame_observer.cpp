@@ -16,6 +16,7 @@ namespace
 const int OBSERVER_TEST_WIDTH = 32;     ///< Largeur des frames de test.
 const int OBSERVER_TEST_HEIGHT = 24;    ///< Hauteur des frames de test.
 const double TEST_ELAPSED_MS = 12.5;    ///< Duree de traitement simulee.
+const double TEST_LARGE_CURVATURE_RADIUS_PX = 1234567.0;  ///< Grand rayon (bascule en notation scientifique ?).
 
 /// @brief Sink de test : memorise les appels au lieu d'ecrire sur disque.
 class RecordingImageSink : public ImageSink
@@ -99,6 +100,25 @@ TEST_CASE( "LaneModelLogger : en-tete puis une ligne par frame" )
   CHECK( ::std::string::npos != text.find( "frame_index" ) );
   CHECK( ::std::string::npos != text.find( "normalized_offset" ) );
   CHECK( ::std::string::npos != text.find( "-0.25" ) );
+}
+
+TEST_CASE( "LaneModelLogger : grand rayon de courbure -> pas de notation scientifique" )
+{
+  ::std::ostringstream output;
+  LaneModelLogger logger( output );
+  const ::cv::Mat frame( OBSERVER_TEST_HEIGHT, OBSERVER_TEST_WIDTH, CV_8UC3, ::cv::Scalar( 0, 0, 0 ) );
+
+  LaneModel model = make_test_model( 0.0 );
+  model.curvature_radius_px = TEST_LARGE_CURVATURE_RADIUS_PX;
+  logger.on_frame( 0, model, frame, TEST_ELAPSED_MS );
+
+  const ::std::string text = output.str();
+  // "e+"/"e-" est la marque de la notation scientifique ; le texte de l'en-tete
+  // contient bien la lettre 'e' (elapsed_ms), donc on cherche ce motif precis.
+  const bool has_scientific_notation =
+    ( ( ::std::string::npos != text.find( "e+" ) ) || ( ::std::string::npos != text.find( "e-" ) ) );
+
+  CHECK( false == has_scientific_notation );
 }
 
 TEST_CASE( "ResultImageWriter : ecrit la frame annotee via l'ImageSink" )

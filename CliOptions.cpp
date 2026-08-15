@@ -77,8 +77,17 @@ int parse_arguments( int p_argument_count, char** p_arguments, CliOptions& p_opt
         return EXIT_FAILURE;
         }
 
+      const ::std::string candidate_value = p_arguments[value_index];
+      const bool value_looks_like_flag = looks_like_flag( candidate_value );
+
+      if ( value_looks_like_flag )
+        {
+        p_options.error_message = ERROR_MISSING_VALUE + argument;
+        return EXIT_FAILURE;
+        }
+
       p_options.source_kind = is_image_flag ? SOURCE_KIND_IMAGE : SOURCE_KIND_VIDEO;
-      p_options.input_path = p_arguments[value_index];
+      p_options.input_path = candidate_value;
       mode_already_set = true;
       argument_index = value_index + 1;
       }

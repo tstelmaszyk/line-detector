@@ -42,6 +42,7 @@ target_compile_options( line_detector_app PRIVATE -Wall -Wextra )
 # --- Executable ---
 add_executable( line_detector main.cpp )
 target_link_libraries( line_detector PRIVATE line_detector_app )
+target_compile_options( line_detector PRIVATE -Wall -Wextra )
 
 # --- Tests unitaires (doctest) ---
 enable_testing()

@@ -129,6 +129,17 @@ TEST_CASE( "parse_arguments : valeur manquante apres --image -> echec" )
   CHECK( !options.error_message.empty() );
 }
 
+TEST_CASE( "parse_arguments : --image suivi d'un flag -> valeur manquante" )
+{
+  ArgumentVector arguments( { "line_detector", "--image", "--video", "b.avi" } );
+  CliOptions options;
+
+  const int status = parse_arguments( arguments.count(), arguments.values(), options );
+
+  CHECK( EXIT_FAILURE == status );
+  CHECK( !options.error_message.empty() );
+}
+
 TEST_CASE( "parse_arguments : flag inconnu -> echec" )
 {
   ArgumentVector arguments( { "line_detector", "--webcam" } );
