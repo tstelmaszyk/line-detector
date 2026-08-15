@@ -5,10 +5,13 @@
 #include <sstream>
 #include <string>
 
+#include "AnnotatedVideoWriter.h"
+#include "FrameObserver.h"
 #include "ImageSink.h"
 #include "LaneModel.h"
 #include "LaneModelLogger.h"
 #include "ResultImageWriter.h"
+#include "test_support.h"
 
 namespace
 {
@@ -149,4 +152,47 @@ TEST_CASE( "ResultImageWriter : echec d'ecriture signale par has_failed" )
   const bool failed = writer.has_failed();
 
   CHECK( true == failed );
+}
+
+TEST_CASE( "needs_annotated_frame : true par defaut, false pour le logger" )
+{
+  // Observateur nu : il herite du defaut de l'interface.
+  class BareObserver : public FrameObserver
+    {
+    public:
+      /// @brief Ne fait rien : seul le defaut de needs_annotated_frame est teste.
+      void on_frame( int p_frame_index,
+                     const LaneModel& p_model,
+                     const ::cv::Mat& p_annotated_frame,
+                     double p_elapsed_ms ) override
+        {
+        (void) p_frame_index;
+        (void) p_model;
+        (void) p_annotated_frame;
+        (void) p_elapsed_ms;
+        }
+    };
+
+  BareObserver bare_observer;
+  ::std::ostringstream output;
+  LaneModelLogger logger( output );
+
+  const bool bare_needs_frame = bare_observer.needs_annotated_frame();
+  const bool logger_needs_frame = logger.needs_annotated_frame();
+
+  CHECK( true == bare_needs_frame );
+  CHECK( false == logger_needs_frame );
+}
+
+TEST_CASE( "needs_annotated_frame : true pour les deux writers" )
+{
+  RecordingImageSink sink( true );
+  ResultImageWriter image_writer( sink, "output.jpg" );
+  AnnotatedVideoWriter video_writer( test_temp_dir() + "/needs_frame.avi", 10.0 );
+
+  const bool image_needs_frame = image_writer.needs_annotated_frame();
+  const bool video_needs_frame = video_writer.needs_annotated_frame();
+
+  CHECK( true == image_needs_frame );
+  CHECK( true == video_needs_frame );
 }

@@ -30,4 +30,12 @@ class FrameObserver
     /// @brief Indique si l'observateur est dans un état d'échec définitif.
     /// @return false par défaut ; les observateurs qui écrivent en sortie le redéfinissent.
     virtual bool has_fatal_error() const { return false; }
+
+    /// @brief Indique si cet observateur exploite l'image annotée.
+    ///
+    /// Un observateur qui rend false recevra un ::cv::Mat vide et ne doit pas
+    /// le lire. Le défaut est true : se tromper dans ce sens coûte du temps
+    /// CPU, se tromper dans l'autre coûte un Mat vide déréférencé.
+    /// @return true par défaut.
+    virtual bool needs_annotated_frame() const { return true; }
   };

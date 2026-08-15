@@ -29,6 +29,10 @@ class LaneModelLogger : public FrameObserver
                    const ::cv::Mat& p_annotated_frame,
                    double p_elapsed_ms ) override;
 
+    /// @brief Le log CSV n'exploite pas l'image annotée.
+    /// @return false.
+    bool needs_annotated_frame() const override { return false; }
+
   private:
     ::std::ostream& m_output_stream;  ///< Flux de sortie.
     bool m_header_written;            ///< true une fois l'en-tête écrit.

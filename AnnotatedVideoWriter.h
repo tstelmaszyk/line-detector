@@ -52,6 +52,10 @@ class AnnotatedVideoWriter : public FrameObserver
     /// @return has_failed().
     bool has_fatal_error() const override { return has_failed(); }
 
+    /// @brief L'écriture vidéo exploite l'image annotée.
+    /// @return true.
+    bool needs_annotated_frame() const override { return true; }
+
   private:
     ::std::string m_output_path;      ///< Chemin du fichier vidéo.
     double m_frames_per_second;       ///< Cadence déclarée.

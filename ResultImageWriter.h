@@ -42,6 +42,10 @@ class ResultImageWriter : public FrameObserver
     /// @return has_failed().
     bool has_fatal_error() const override { return has_failed(); }
 
+    /// @brief L'écriture du résultat exploite l'image annotée.
+    /// @return true.
+    bool needs_annotated_frame() const override { return true; }
+
   private:
     ImageSink& m_image_sink;      ///< Destination d'écriture.
     ::std::string m_file_name;    ///< Nom du fichier résultat.
