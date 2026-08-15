@@ -94,11 +94,13 @@ class OffsetRecorder : public FrameObserver
     void on_frame( int p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_elapsed_ms ) override
+                   double p_compute_ms,
+                   double p_render_ms ) override
       {
       (void) p_frame_index;
       (void) p_annotated_frame;
-      (void) p_elapsed_ms;
+      (void) p_compute_ms;
+      (void) p_render_ms;
       REQUIRE( p_model.lane_detected );
       m_offsets.push_back( p_model.normalized_offset );
       }

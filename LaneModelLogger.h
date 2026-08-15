@@ -23,11 +23,13 @@ class LaneModelLogger : public FrameObserver
     /// @param p_frame_index     Index de la frame.
     /// @param p_model           Modèle de voie calculé.
     /// @param p_annotated_frame Image annotée (inutilisée ici).
-    /// @param p_elapsed_ms      Durée de traitement de la frame (millisecondes).
+    /// @param p_compute_ms      Durée du calcul de la frame (millisecondes).
+    /// @param p_render_ms       Durée du rendu de la frame (millisecondes).
     void on_frame( int p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_elapsed_ms ) override;
+                   double p_compute_ms,
+                   double p_render_ms ) override;
 
     /// @brief Le log CSV n'exploite pas l'image annotée.
     /// @return false.

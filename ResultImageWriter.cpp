@@ -17,11 +17,13 @@ ResultImageWriter::ResultImageWriter( ImageSink& p_image_sink, ::std::string p_f
 void ResultImageWriter::on_frame( int p_frame_index,
                                   const LaneModel& p_model,
                                   const ::cv::Mat& p_annotated_frame,
-                                  double p_elapsed_ms )
+                                  double p_compute_ms,
+                                  double p_render_ms )
 {
   (void) p_frame_index;
   (void) p_model;
-  (void) p_elapsed_ms;
+  (void) p_compute_ms;
+  (void) p_render_ms;
 
   const bool saved = m_image_sink.save( m_file_name, p_annotated_frame );
 

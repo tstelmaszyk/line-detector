@@ -86,10 +86,12 @@ class FakeFrameObserver : public FrameObserver
     void on_frame( int p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_elapsed_ms ) override
+                   double p_compute_ms,
+                   double p_render_ms ) override
       {
       (void) p_model;
-      (void) p_elapsed_ms;
+      (void) p_compute_ms;
+      (void) p_render_ms;
       const bool frame_is_empty = p_annotated_frame.empty();
       CHECK( false == frame_is_empty );
       m_indices.push_back( p_frame_index );
@@ -119,12 +121,14 @@ class FatalAfterFirstFrameObserver : public FrameObserver
     void on_frame( int p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_elapsed_ms ) override
+                   double p_compute_ms,
+                   double p_render_ms ) override
       {
       (void) p_frame_index;
       (void) p_model;
       (void) p_annotated_frame;
-      (void) p_elapsed_ms;
+      (void) p_compute_ms;
+      (void) p_render_ms;
       ++m_frames_seen;
       }
 
@@ -137,6 +141,82 @@ class FatalAfterFirstFrameObserver : public FrameObserver
 
   private:
     int m_frames_seen;  ///< Nombre de frames recues.
+  };
+
+/// @brief Observateur qui n'exploite pas l'image : memorise si elle etait vide.
+class FrameAgnosticObserver : public FrameObserver
+  {
+  public:
+    /// @brief Construit l'observateur.
+    FrameAgnosticObserver()
+      : m_all_frames_empty( true )
+      {
+      }
+
+    /// @brief Memorise la vacuite de l'image recue.
+    void on_frame( int p_frame_index,
+                   const LaneModel& p_model,
+                   const ::cv::Mat& p_annotated_frame,
+                   double p_compute_ms,
+                   double p_render_ms ) override
+      {
+      (void) p_frame_index;
+      (void) p_model;
+      (void) p_compute_ms;
+      (void) p_render_ms;
+      const bool frame_is_empty = p_annotated_frame.empty();
+
+      if ( !frame_is_empty )
+        {
+        m_all_frames_empty = false;
+        }
+      }
+
+    /// @brief N'exploite pas l'image annotee.
+    bool needs_annotated_frame() const override { return false; }
+
+    /// @brief true si toutes les images recues etaient vides.
+    bool all_frames_empty() const
+      {
+      return m_all_frames_empty;
+      }
+
+  private:
+    bool m_all_frames_empty;  ///< true tant qu'aucune image non vide n'est recue.
+  };
+
+/// @brief Observateur qui exploite l'image : memorise sa taille.
+class FrameHungryObserver : public FrameObserver
+  {
+  public:
+    /// @brief Construit l'observateur.
+    FrameHungryObserver()
+      : m_last_size( 0, 0 )
+      {
+      }
+
+    /// @brief Memorise la taille de l'image recue.
+    void on_frame( int p_frame_index,
+                   const LaneModel& p_model,
+                   const ::cv::Mat& p_annotated_frame,
+                   double p_compute_ms,
+                   double p_render_ms ) override
+      {
+      (void) p_frame_index;
+      (void) p_model;
+      (void) p_compute_ms;
+      (void) p_render_ms;
+      m_last_size = p_annotated_frame.size();
+      }
+
+    /// @brief Taille de la derniere image recue.
+    ::cv::Size last_size() const
+      {
+      return m_last_size;
+      }
+
+  private:
+    ::cv::Size m_last_size;  ///< Taille de la derniere image recue.
   };
 
 } // namespace
@@ -166,7 +246,7 @@ TEST_CASE( "PipelineRunner : traite toutes les frames et compte les stats" )
   CHECK( RUNNER_TEST_FRAME_COUNT == static_cast< int >( observer.indices().size() ) );
   CHECK( 0 == observer.indices().front() );
   CHECK( ( RUNNER_TEST_FRAME_COUNT - 1 ) == observer.indices().back() );
-  CHECK( 0.0 <= stats.total_ms );
+  CHECK( 0.0 <= stats.compute_ms );
   CHECK( stats.detected_count <= stats.frame_count );
 }
 
@@ -240,4 +320,58 @@ TEST_CASE( "PipelineRunner : observateur en echec definitif -> arret anticipe" )
 
   CHECK( EXIT_SUCCESS == status );
   CHECK( 1 == stats.frame_count );
+}
+
+TEST_CASE( "PipelineRunner : aucun observateur n'exploite l'image -> pas de rendu" )
+{
+  const ::cv::Mat first_frame = make_lane_frame( RUNNER_LEFT_LINE_X, RUNNER_RIGHT_LINE_X );
+  VideoCaracteristics video( first_frame );
+  LaneConfig config;
+  config.default_lane_width_px = RUNNER_TEST_WIDTH * RUNNER_LANE_WIDTH_RATIO;
+  NullImageSink debug_sink;
+  const DetectLines detector( video, config, debug_sink );
+
+  FakeFrameSource source( RUNNER_TEST_FRAME_COUNT - 1 );
+  FrameAgnosticObserver observer;
+  ::std::vector< FrameObserver* > observers;
+  observers.push_back( &observer );
+  const ::std::atomic< bool > stop_requested( false );
+
+  PipelineRunner runner( source, detector, observers, stop_requested );
+  RunStats stats;
+  const int status = runner.run( first_frame, stats );
+
+  const bool all_frames_empty = observer.all_frames_empty();
+
+  CHECK( EXIT_SUCCESS == status );
+  CHECK( true == all_frames_empty );
+  // Egalite stricte : le rendu n'a jamais ete execute, la duree cumulee est exactement nulle.
+  CHECK( 0.0 == stats.render_ms );
+  CHECK( 0.0 < stats.compute_ms );
+}
+
+TEST_CASE( "PipelineRunner : un observateur exploite l'image -> rendu execute" )
+{
+  const ::cv::Mat first_frame = make_lane_frame( RUNNER_LEFT_LINE_X, RUNNER_RIGHT_LINE_X );
+  VideoCaracteristics video( first_frame );
+  LaneConfig config;
+  config.default_lane_width_px = RUNNER_TEST_WIDTH * RUNNER_LANE_WIDTH_RATIO;
+  NullImageSink debug_sink;
+  const DetectLines detector( video, config, debug_sink );
+
+  FakeFrameSource source( 0 );
+  FrameHungryObserver observer;
+  ::std::vector< FrameObserver* > observers;
+  observers.push_back( &observer );
+  const ::std::atomic< bool > stop_requested( false );
+
+  PipelineRunner runner( source, detector, observers, stop_requested );
+  RunStats stats;
+  const int status = runner.run( first_frame, stats );
+
+  const ::cv::Size received_size = observer.last_size();
+
+  CHECK( EXIT_SUCCESS == status );
+  CHECK( RUNNER_TEST_WIDTH == received_size.width );
+  CHECK( RUNNER_TEST_HEIGHT == received_size.height );
 }

@@ -28,11 +28,13 @@ class ResultImageWriter : public FrameObserver
     /// @param p_frame_index     Index de la frame (inutilisé ici).
     /// @param p_model           Modèle de voie (inutilisé ici).
     /// @param p_annotated_frame Image annotée à écrire.
-    /// @param p_elapsed_ms      Durée de traitement (inutilisée ici).
+    /// @param p_compute_ms      Durée du calcul (inutilisée ici).
+    /// @param p_render_ms       Durée du rendu (inutilisée ici).
     void on_frame( int p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_elapsed_ms ) override;
+                   double p_compute_ms,
+                   double p_render_ms ) override;
 
     /// @brief Indique si une écriture a échoué.
     /// @return true si au moins une écriture a échoué.

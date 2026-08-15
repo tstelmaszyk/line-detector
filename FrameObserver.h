@@ -20,12 +20,15 @@ class FrameObserver
     /// @brief Notifie le résultat d'une frame.
     /// @param p_frame_index     Index de la frame (0 pour la première).
     /// @param p_model           Modèle de voie calculé.
-    /// @param p_annotated_frame Image annotée produite par le pipeline.
-    /// @param p_elapsed_ms      Durée de traitement de la frame (millisecondes).
+    /// @param p_annotated_frame Image annotée ; **vide** si aucun observateur
+    ///                          n'a déclaré en avoir besoin.
+    /// @param p_compute_ms      Durée du calcul de la frame (millisecondes).
+    /// @param p_render_ms       Durée du rendu de la frame (0 si non rendu).
     virtual void on_frame( int p_frame_index,
                            const LaneModel& p_model,
                            const ::cv::Mat& p_annotated_frame,
-                           double p_elapsed_ms ) = 0;
+                           double p_compute_ms,
+                           double p_render_ms ) = 0;
 
     /// @brief Indique si l'observateur est dans un état d'échec définitif.
     /// @return false par défaut ; les observateurs qui écrivent en sortie le redéfinissent.

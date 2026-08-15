@@ -33,7 +33,7 @@ TEST_CASE( "AnnotatedVideoWriter : ecrit une video relisible" )
 
     for ( int frame_index = 0; frame_index < VIDEO_TEST_FRAMES; ++frame_index )
       {
-      writer.on_frame( frame_index, model, frame, VIDEO_TEST_MS );
+      writer.on_frame( frame_index, model, frame, VIDEO_TEST_MS, 0.0 );
       }
 
     const bool failed = writer.has_failed();
@@ -68,7 +68,7 @@ TEST_CASE( "AnnotatedVideoWriter : chemin invalide -> echec signale" )
   LaneModel model;
 
   AnnotatedVideoWriter writer( invalid_path, VIDEO_TEST_FPS );
-  writer.on_frame( 0, model, frame, VIDEO_TEST_MS );
+  writer.on_frame( 0, model, frame, VIDEO_TEST_MS, 0.0 );
 
   const bool failed = writer.has_failed();
 
@@ -87,10 +87,10 @@ TEST_CASE( "AnnotatedVideoWriter : apres un echec, plus aucune frame n'est ecrit
     AnnotatedVideoWriter writer( video_path, VIDEO_TEST_FPS );
 
     // Une frame vide met le writer en echec...
-    writer.on_frame( 0, model, empty_frame, VIDEO_TEST_MS );
+    writer.on_frame( 0, model, empty_frame, VIDEO_TEST_MS, 0.0 );
 
     // ... et la frame valide suivante ne doit plus rien ecrire.
-    writer.on_frame( 1, model, valid_frame, VIDEO_TEST_MS );
+    writer.on_frame( 1, model, valid_frame, VIDEO_TEST_MS, 0.0 );
 
     const bool failed = writer.has_failed();
     CHECK( true == failed );

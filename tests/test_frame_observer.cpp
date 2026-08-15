@@ -83,8 +83,8 @@ TEST_CASE( "LaneModelLogger : en-tete puis une ligne par frame" )
 
   const LaneModel first_model = make_test_model( -0.25 );
   const LaneModel second_model = make_test_model( 0.10 );
-  logger.on_frame( 0, first_model, frame, TEST_ELAPSED_MS );
-  logger.on_frame( 1, second_model, frame, TEST_ELAPSED_MS );
+  logger.on_frame( 0, first_model, frame, TEST_ELAPSED_MS, 0.0 );
+  logger.on_frame( 1, second_model, frame, TEST_ELAPSED_MS, 0.0 );
 
   const ::std::string text = output.str();
 
@@ -113,7 +113,7 @@ TEST_CASE( "LaneModelLogger : grand rayon de courbure -> pas de notation scienti
 
   LaneModel model = make_test_model( 0.0 );
   model.curvature_radius_px = TEST_LARGE_CURVATURE_RADIUS_PX;
-  logger.on_frame( 0, model, frame, TEST_ELAPSED_MS );
+  logger.on_frame( 0, model, frame, TEST_ELAPSED_MS, 0.0 );
 
   const ::std::string text = output.str();
   // "e+"/"e-" est la marque de la notation scientifique ; le texte de l'en-tete
@@ -131,7 +131,7 @@ TEST_CASE( "ResultImageWriter : ecrit la frame annotee via l'ImageSink" )
   const ::cv::Mat frame( OBSERVER_TEST_HEIGHT, OBSERVER_TEST_WIDTH, CV_8UC3, ::cv::Scalar( 0, 0, 0 ) );
   const LaneModel model = make_test_model( 0.0 );
 
-  writer.on_frame( 0, model, frame, TEST_ELAPSED_MS );
+  writer.on_frame( 0, model, frame, TEST_ELAPSED_MS, 0.0 );
 
   const bool failed = writer.has_failed();
 
@@ -147,7 +147,7 @@ TEST_CASE( "ResultImageWriter : echec d'ecriture signale par has_failed" )
   const ::cv::Mat frame( OBSERVER_TEST_HEIGHT, OBSERVER_TEST_WIDTH, CV_8UC3, ::cv::Scalar( 0, 0, 0 ) );
   const LaneModel model = make_test_model( 0.0 );
 
-  writer.on_frame( 0, model, frame, TEST_ELAPSED_MS );
+  writer.on_frame( 0, model, frame, TEST_ELAPSED_MS, 0.0 );
 
   const bool failed = writer.has_failed();
 
@@ -164,12 +164,14 @@ TEST_CASE( "needs_annotated_frame : true par defaut, false pour le logger" )
       void on_frame( int p_frame_index,
                      const LaneModel& p_model,
                      const ::cv::Mat& p_annotated_frame,
-                     double p_elapsed_ms ) override
+                     double p_compute_ms,
+                     double p_render_ms ) override
         {
         (void) p_frame_index;
         (void) p_model;
         (void) p_annotated_frame;
-        (void) p_elapsed_ms;
+        (void) p_compute_ms;
+        (void) p_render_ms;
         }
     };
 

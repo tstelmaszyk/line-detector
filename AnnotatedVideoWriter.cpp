@@ -33,11 +33,13 @@ AnnotatedVideoWriter::~AnnotatedVideoWriter()
 void AnnotatedVideoWriter::on_frame( int p_frame_index,
                                      const LaneModel& p_model,
                                      const ::cv::Mat& p_annotated_frame,
-                                     double p_elapsed_ms )
+                                     double p_compute_ms,
+                                     double p_render_ms )
 {
   (void) p_frame_index;
   (void) p_model;
-  (void) p_elapsed_ms;
+  (void) p_compute_ms;
+  (void) p_render_ms;
 
   // Un echec est definitif : on n'ecrit plus rien et on ne retente pas l'ouverture.
   if ( true == m_has_failed )

@@ -62,6 +62,8 @@ const ::std::string MESSAGE_SUMMARY_DETECTED_PREFIX = " | detectees : ";        
 const ::std::string MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX = " | reconstruites : ";   ///< Resume : reconstructions.
 const ::std::string MESSAGE_SUMMARY_AVERAGE_PREFIX = " | moyenne : ";               ///< Resume : moyenne ms.
 const ::std::string MESSAGE_SUMMARY_MS_PER_FRAME_SUFFIX = " ms/frame";              ///< Resume : suffixe ms/frame.
+const ::std::string MESSAGE_SUMMARY_RENDER_PREFIX = " (dont ";                      ///< Resume : part du rendu.
+const ::std::string MESSAGE_SUMMARY_RENDER_SUFFIX = " ms de rendu)";                ///< Resume : fin rendu.
 const ::std::string MESSAGE_SUMMARY_FPS_PREFIX = " (";                              ///< Resume : ouverture FPS.
 const ::std::string MESSAGE_SUMMARY_FPS_SUFFIX = " FPS)";                           ///< Resume : fermeture FPS.
 const ::std::string MESSAGE_RESULT_WRITTEN_PREFIX = "Resultat ecrit dans : ";       ///< Resume : chemin resultat.
@@ -263,15 +265,18 @@ int main( int argc, char** argv )
     }
 
   // 10. Resume.
-  const double average_ms = stats.total_ms / static_cast< double >( stats.frame_count );
+  const double total_ms = stats.compute_ms + stats.render_ms;
+  const double average_ms = total_ms / static_cast< double >( stats.frame_count );
+  const double average_render_ms = stats.render_ms / static_cast< double >( stats.frame_count );
   const double frames_per_second = MILLISECONDS_PER_SECOND / average_ms;
 
   ::std::cerr << MESSAGE_SUMMARY_FRAMES_PREFIX << stats.frame_count
               << MESSAGE_SUMMARY_DETECTED_PREFIX << stats.detected_count
               << MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX << stats.reconstructed_count
               << MESSAGE_SUMMARY_AVERAGE_PREFIX << average_ms << MESSAGE_SUMMARY_MS_PER_FRAME_SUFFIX
-              << MESSAGE_SUMMARY_FPS_PREFIX << frames_per_second << MESSAGE_SUMMARY_FPS_SUFFIX
-              << ::std::endl;
+              << MESSAGE_SUMMARY_RENDER_PREFIX << average_render_ms << MESSAGE_SUMMARY_RENDER_SUFFIX
+              << MESSAGE_SUMMARY_FPS_PREFIX << frames_per_second
+              << MESSAGE_SUMMARY_FPS_SUFFIX << ::std::endl;
 
   const ::std::string result_name = is_still_image ? OUTPUT_IMAGE_NAME : OUTPUT_VIDEO_NAME;
   ::std::cerr << MESSAGE_RESULT_WRITTEN_PREFIX << output_dir << PATH_SEPARATOR << result_name << ::std::endl;

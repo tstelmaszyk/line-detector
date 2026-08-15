@@ -22,22 +22,50 @@ PipelineRunner::PipelineRunner( FrameSource& p_frame_source,
   : m_frame_source( p_frame_source ),
     m_detector( p_detector ),
     m_observers( p_observers ),
-    m_stop_requested( p_stop_requested )
+    m_stop_requested( p_stop_requested ),
+    m_render_needed( false )
 {
+  // Le besoin de rendu est fige a la construction : la liste d'observateurs
+  // ne change pas pendant un run.
+  for ( const FrameObserver* observer : m_observers )
+    {
+    if ( nullptr != observer )
+      {
+      const bool observer_needs_frame = observer->needs_annotated_frame();
+
+      if ( observer_needs_frame )
+        {
+        m_render_needed = true;
+        }
+      }
+    }
 }
 
 bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats )
 {
-  const ::std::chrono::steady_clock::time_point start_time = ::std::chrono::steady_clock::now();
+  const ::std::chrono::steady_clock::time_point compute_start = ::std::chrono::steady_clock::now();
+
+  const LaneModel model = m_detector.compute( p_frame );
+
+  const ::std::chrono::steady_clock::time_point compute_end = ::std::chrono::steady_clock::now();
+  const ::std::chrono::microseconds compute_us =
+    ::std::chrono::duration_cast< ::std::chrono::microseconds >( compute_end - compute_start );
+  const double compute_ms = static_cast< double >( compute_us.count() ) / MICROSECONDS_PER_MILLISECOND;
 
   ::cv::Mat annotated_frame;
-  const LaneModel model = m_detector.compute( p_frame );
-  m_detector.render( p_frame, model, annotated_frame );
+  double render_ms = 0.0;
 
-  const ::std::chrono::steady_clock::time_point end_time = ::std::chrono::steady_clock::now();
-  const ::std::chrono::microseconds elapsed_us =
-    ::std::chrono::duration_cast< ::std::chrono::microseconds >( end_time - start_time );
-  const double elapsed_ms = static_cast< double >( elapsed_us.count() ) / MICROSECONDS_PER_MILLISECOND;
+  if ( m_render_needed )
+    {
+    const ::std::chrono::steady_clock::time_point render_start = ::std::chrono::steady_clock::now();
+
+    m_detector.render( p_frame, model, annotated_frame );
+
+    const ::std::chrono::steady_clock::time_point render_end = ::std::chrono::steady_clock::now();
+    const ::std::chrono::microseconds render_us =
+      ::std::chrono::duration_cast< ::std::chrono::microseconds >( render_end - render_start );
+    render_ms = static_cast< double >( render_us.count() ) / MICROSECONDS_PER_MILLISECOND;
+    }
 
   bool has_fatal_error = false;
 
@@ -45,7 +73,7 @@ bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index,
     {
     if ( nullptr != observer )
       {
-      observer->on_frame( p_frame_index, model, annotated_frame, elapsed_ms );
+      observer->on_frame( p_frame_index, model, annotated_frame, compute_ms, render_ms );
       const bool observer_has_fatal_error = observer->has_fatal_error();
 
       if ( observer_has_fatal_error )
@@ -56,7 +84,8 @@ bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index,
     }
 
   ++p_stats.frame_count;
-  p_stats.total_ms = p_stats.total_ms + elapsed_ms;
+  p_stats.compute_ms = p_stats.compute_ms + compute_ms;
+  p_stats.render_ms = p_stats.render_ms + render_ms;
 
   if ( model.lane_detected )
     {

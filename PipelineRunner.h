@@ -50,4 +50,5 @@ class PipelineRunner
     const DetectLines& m_detector;                    ///< Pipeline de détection.
     ::std::vector< FrameObserver* > m_observers;      ///< Observateurs notifiés.
     const ::std::atomic< bool >& m_stop_requested;    ///< Drapeau d'arrêt.
+    bool m_render_needed;  ///< true si au moins un observateur exploite l'image annotée.
   };
