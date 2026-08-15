@@ -10,6 +10,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include "AnnotatedVideoWriter.h"
@@ -54,6 +55,8 @@ const ::std::string MESSAGE_IMAGE_WRITE_FAILED_PREFIX =
   "Impossible d'ecrire l'image de sortie : ";                            ///< Echec ecriture image.
 const ::std::string MESSAGE_VIDEO_WRITE_FAILED_PREFIX =
   "Impossible d'ecrire la video de sortie : ";                           ///< Echec ecriture video.
+const ::std::string MESSAGE_OUTPUT_DIR_FAILED_PREFIX =
+  "Impossible de creer ou d'utiliser le dossier de sortie : ";           ///< Echec dossier de sortie.
 const ::std::string MESSAGE_SUMMARY_FRAMES_PREFIX = "Frames : ";                    ///< Resume : frames.
 const ::std::string MESSAGE_SUMMARY_DETECTED_PREFIX = " | detectees : ";            ///< Resume : detections.
 const ::std::string MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX = " | reconstruites : ";   ///< Resume : reconstructions.
@@ -168,8 +171,19 @@ int main( int argc, char** argv )
   const ::std::string output_dir = ( nullptr != output_dir_env ) ? output_dir_env : DEFAULT_OUTPUT_DIR;
 
   // cv::imwrite ne cree pas le dossier de sortie : on le cree ici, avant tout sink.
-  // Un dossier deja existant n'est pas une erreur ; la valeur de retour est ignoree.
-  ::std::filesystem::create_directories( output_dir );
+  // Version non-levante : un dossier deja present n'est pas une erreur (create_directories
+  // rend false sans lever), mais des droits insuffisants ou un fichier deja present a ce
+  // chemin ne doivent pas terminer le process par une exception non rattrapee.
+  ::std::error_code create_directory_error;
+  ::std::filesystem::create_directories( output_dir, create_directory_error );
+
+  const bool output_dir_usable = ::std::filesystem::is_directory( output_dir, create_directory_error );
+
+  if ( !output_dir_usable )
+    {
+    ::std::cerr << MESSAGE_OUTPUT_DIR_FAILED_PREFIX << output_dir << ::std::endl;
+    return EXIT_FAILURE;
+    }
 
   const char* debug_env = ::std::getenv( DEBUG_ENV_VAR );
   const bool debug_enabled = ( nullptr != debug_env ) && ( '\0' != debug_env[0] );
