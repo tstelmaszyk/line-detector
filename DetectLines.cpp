@@ -36,15 +36,19 @@ DetectLines::DetectLines( const VideoCaracteristics& p_video,
 LaneModel DetectLines::draw_lines( const ::cv::Mat& p_frame_to_compute,
                                    ::cv::Mat& p_frame_with_lines ) const
 {
+  const bool debug_enabled = m_debug_sink.is_enabled();
+
   ::cv::Mat binary;
   m_mask.compute( p_frame_to_compute, binary );
 
   ::cv::Mat bev;
   m_perspective.to_bev( binary, bev );
-  m_debug_sink.save( "debug_02_bev.jpg", bev );
 
-  // Debug calibration BEV : trapèze source sur l'image couleur + warp couleur.
+  if ( debug_enabled )
     {
+    m_debug_sink.save( "debug_02_bev.jpg", bev );
+
+    // Debug calibration BEV : trapèze source sur l'image couleur + warp couleur.
     ::cv::Mat trapeze = p_frame_to_compute.clone();
     const ::std::vector< ::cv::Point2f >& quad = m_perspective.source_quad();
 
@@ -75,7 +79,9 @@ LaneModel DetectLines::draw_lines( const ::cv::Mat& p_frame_to_compute,
   model = LaneGeometry::compute( model, m_video_properties, m_config );
 
   // debug_04_fit : polynômes gauche/droite tracés sur une copie BGR de la BEV.
-  if ( model.left.valid && model.right.valid )
+  const bool can_draw_fit_debug = ( debug_enabled && model.left.valid && model.right.valid );
+
+  if ( can_draw_fit_debug )
     {
     ::cv::Mat fit_debug;
     ::cv::cvtColor( bev, fit_debug, ::cv::COLOR_GRAY2BGR );

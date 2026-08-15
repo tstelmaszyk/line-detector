@@ -23,4 +23,8 @@ class NullImageSink : public ImageSink
       (void) p_frame;
       return true;
       }
+
+    /// @brief Ce sink n'écrit jamais rien.
+    /// @return Toujours false.
+    bool is_enabled() const override { return false; }
   };

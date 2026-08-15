@@ -22,4 +22,8 @@ class ImageSink
     /// @param p_frame Image à écrire.
     /// @return true si l'image a été écrite.
     virtual bool save( const ::std::string& p_name, const ::cv::Mat& p_frame ) = 0;
+
+    /// @brief Indique si le sink écrit réellement quelque chose.
+    /// @return true par défaut ; les sinks no-op renvoient false.
+    virtual bool is_enabled() const { return true; }
   };
