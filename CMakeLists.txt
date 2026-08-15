@@ -25,6 +25,7 @@ target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 
 # --- Bibliotheque applicative : capture, boucle, sorties dev/test ---
 set(APP_SOURCES
+    AnnotatedVideoWriter.cpp
     CaptureFrameSource.cpp
     CliOptions.cpp
     LaneModelLogger.cpp
