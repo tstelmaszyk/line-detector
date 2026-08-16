@@ -117,7 +117,7 @@ TEST_CASE( "LaneModelLogger : grand rayon de courbure -> pas de notation scienti
 
   const ::std::string text = output.str();
   // "e+"/"e-" est la marque de la notation scientifique ; le texte de l'en-tete
-  // contient bien la lettre 'e' (elapsed_ms), donc on cherche ce motif precis.
+  // contient bien la lettre 'e' (compute_ms, render_ms), donc on cherche ce motif precis.
   const bool has_scientific_notation =
     ( ( ::std::string::npos != text.find( "e+" ) ) || ( ::std::string::npos != text.find( "e-" ) ) );
 

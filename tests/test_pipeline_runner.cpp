@@ -246,7 +246,7 @@ TEST_CASE( "PipelineRunner : traite toutes les frames et compte les stats" )
   CHECK( RUNNER_TEST_FRAME_COUNT == static_cast< int >( observer.indices().size() ) );
   CHECK( 0 == observer.indices().front() );
   CHECK( ( RUNNER_TEST_FRAME_COUNT - 1 ) == observer.indices().back() );
-  CHECK( 0.0 <= stats.compute_ms );
+  CHECK( 0.0 < stats.compute_ms );
   CHECK( stats.detected_count <= stats.frame_count );
 }
 
