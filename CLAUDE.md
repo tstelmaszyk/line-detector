@@ -30,9 +30,9 @@ docker run --rm -v "$(pwd):/app" -w /app line-detector \
 ```
 
 Trois modes, mutuellement exclusifs : `--image <chemin>` (défaut : `img_piste/img2.jpg`),
-`--video <chemin>` (fichier vidéo) et `--camera [index]` (défaut `0`). Le mode image
-écrit `out/output.jpg` ; les modes flux écrivent `out/output.avi` — la vidéo annotée
-est toujours écrite à une cadence **fixe de 30 fps**, quelle que soit la cadence
+`--video <chemin>` (fichier vidéo) et `--camera [index]` (défaut `0`). Avec `--record`,
+le mode image écrit `out/output.jpg` ; les modes flux écrivent `out/output.avi` — la
+vidéo annotée est toujours écrite à une cadence **fixe de 30 fps**, quelle que soit la cadence
 réelle de la source (`FrameSource` n'expose volontairement pas de `fps()`, cf.
 Architecture) ; une vidéo issue d'une source plus lente ou plus rapide que 30 fps
 paraîtra donc accélérée ou ralentie à la relecture — ce n'est pas un bug.
@@ -52,7 +52,13 @@ format `std::fixed`, jamais de notation scientifique) ; `stderr` porte tous les
 messages destinés à un humain (erreurs, résumé final frames/détections/ms/FPS —
 dont la part de rendu entre parenthèses —, chemin du résultat écrit si
 `--record`). Rediriger `stdout` seul suffit donc à consommer le
-signal de pilotage sans parser de texte. `Ctrl-C` arrête proprement la boucle et
+signal de pilotage sans parser de texte. **`render_ms` n'est pas « le coût de
+production du fichier de sortie »** : avec `LINE_DETECTOR_DEBUG` **et**
+`--record`, il inclut l'écriture de `debug_05_overlay.jpg` (cet `imwrite` a
+lieu dans `LaneOverlay::render`, donc dans `DetectLines::render`), alors que
+l'encodage du fichier résultat lui-même (`out/output.jpg`/`.avi`) se fait dans
+l'observateur (`ResultImageWriter`/`AnnotatedVideoWriter`), hors des deux
+chronomètres. `Ctrl-C` arrête proprement la boucle et
 ferme le fichier vidéo ; un second `Ctrl-C` termine toujours le processus, même si
 la lecture caméra est bloquée.
 
@@ -92,8 +98,10 @@ seulement qu'il tourne sans planter. Pas de linter ni de CI.
 
 ## Architecture
 
-Le pipeline est orchestré par `DetectLines::draw_lines` (`DetectLines.cpp`),
-unique point d'entrée. Il **renvoie un `LaneModel`** (le signal de pilotage) et
+Le pipeline est orchestré par `DetectLines` (`DetectLines.cpp`), qui expose deux
+points d'entrée. **`compute()`** exécute les étapes 1 à 5 ci-dessous et **renvoie
+un `LaneModel`** (le signal de pilotage) sans rien dessiner. **`render()`** prend
+un `LaneModel` déjà calculé et une image, exécute l'étape 6 (`LaneOverlay`) et
 dessine le résultat dans l'image de sortie. Étapes, dans l'ordre :
 
 1. **`LaneMask`** (`LaneMask.cpp`) — image binaire des marquages depuis le BGR :
@@ -115,7 +123,10 @@ dessine le résultat dans l'image de sortie. Étapes, dans l'ordre :
    un côté manquant par décalage (cf. plus bas).
 6. **`LaneOverlay::render`** (`LaneOverlay.cpp`) — remplit le polygone de voie en
    BEV, le ramène en perspective image (`warpBack`), le fusionne sur l'image
-   d'origine et ajoute un HUD (offset + courbure).
+   d'origine et ajoute un HUD (offset + courbure). **Contrairement aux étapes 1
+   à 5, qui appartiennent à `DetectLines::compute`, cette étape ne s'exécute que
+   dans `DetectLines::render`** — elle est sautée si aucun observateur ne
+   réclame l'image annotée (cf. « Couche application »).
 
 Types clés et possession :
 
@@ -142,17 +153,20 @@ Types clés et possession :
   les dimensions en pixels.
 - **`ImageSink`** (`ImageSink.h`) — interface `bool save(name, frame)`.
   `DiskImageSink` écrit dans un dossier (`cv::imwrite`), `NullImageSink` est un
-  no-op. Résultat final et traces de debug passent par la même interface : le
-  résultat est toujours `DiskImageSink` ; les traces sont `DiskImageSink` si
+  no-op. Résultat final et traces de debug passent par la même interface, mais
+  ne sont **plus** garantis d'exister : le sink de résultat n'est construit
+  (`DiskImageSink`) que si `--record` est passé, sinon aucun observateur
+  d'écriture n'est même créé ; les traces sont `DiskImageSink` si
   `LINE_DETECTOR_DEBUG` est défini, sinon `NullImageSink`. Les sinks sont créés
   dans `main` et injectés par référence dans `DetectLines` puis les composants.
 
 Ordre de construction dans `main.cpp` : `VideoCaracteristics` depuis la
 **première frame lue**, puis `LaneConfig`, puis `DetectLines`. `main` n'appelle
-plus `draw_lines` lui-même : il assemble aussi la `FrameSource` et les
+ni `compute` ni `render` lui-même : il assemble aussi la `FrameSource` et les
 `FrameObserver`, puis délègue la boucle à `PipelineRunner::run`, qui appelle
-`draw_lines` frame par frame et notifie les observateurs avec le `LaneModel`
-renvoyé (cf. « Couche application » ci-dessous).
+`DetectLines::compute` frame par frame, puis `DetectLines::render` seulement si
+au moins un observateur réclame l'image annotée, et notifie les observateurs
+avec le `LaneModel` renvoyé (cf. « Couche application » ci-dessous).
 
 ### Couche application
 
