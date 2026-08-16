@@ -11,7 +11,7 @@
     //   - context    : dossier que Docker peut "voir" pour le build. ".." = la
     //                   racine du projet (la ou vivent main.cpp, CMakeLists.txt...).
     "build": {
-        "dockerfile": "../Dockerfile",
+        "dockerfile": "../docker/Dockerfile",
         "context": ".."
     },
 

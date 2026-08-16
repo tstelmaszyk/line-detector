@@ -19,7 +19,7 @@ programme, cf. roadmap dans `docs/superpowers/specs/`.
 Build CMake hors-source. **OpenCV n'est pas installé sur l'hôte de dev (macOS)** :
 la compilation se fait dans le conteneur Docker (image `line-detector`, base
 `debian:bookworm-slim` + `libopencv-dev`). L'image se construit avec
-`docker build -t line-detector .`.
+`docker build -t line-detector -f docker/Dockerfile .`.
 
 Compiler l'exécutable et lancer sur une image, en montant la source :
 

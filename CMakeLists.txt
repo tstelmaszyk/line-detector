@@ -9,38 +9,38 @@ message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
 # --- Bibliotheque : pipeline de detection ---
 # Rien ici ne lit argv, n'ecrit sur stdout, ni ne possede de boucle de capture.
 set(LANE_SOURCES
-    DetectLines.cpp
-    DiskImageSink.cpp
-    LanePolynomial.cpp
-    LaneGeometry.cpp
-    LaneMask.cpp
-    PerspectiveView.cpp
-    SlidingWindowSearch.cpp
-    LaneOverlay.cpp
+    src/lib/DetectLines.cpp
+    src/lib/DiskImageSink.cpp
+    src/lib/LanePolynomial.cpp
+    src/lib/LaneGeometry.cpp
+    src/lib/LaneMask.cpp
+    src/lib/PerspectiveView.cpp
+    src/lib/SlidingWindowSearch.cpp
+    src/lib/LaneOverlay.cpp
 )
 
 add_library( line_detector_lib STATIC ${LANE_SOURCES} )
-target_include_directories( line_detector_lib PUBLIC ${CMAKE_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS} )
+target_include_directories( line_detector_lib PUBLIC ${CMAKE_SOURCE_DIR}/src/lib ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 
 # --- Bibliotheque applicative : capture, boucle, sorties dev/test ---
 set(APP_SOURCES
-    AnnotatedVideoWriter.cpp
-    CaptureFrameSource.cpp
-    CliOptions.cpp
-    LaneModelLogger.cpp
-    PipelineRunner.cpp
-    ResultImageWriter.cpp
-    StillImageFrameSource.cpp
+    src/app/AnnotatedVideoWriter.cpp
+    src/app/CaptureFrameSource.cpp
+    src/app/CliOptions.cpp
+    src/app/LaneModelLogger.cpp
+    src/app/PipelineRunner.cpp
+    src/app/ResultImageWriter.cpp
+    src/app/StillImageFrameSource.cpp
 )
 
 add_library( line_detector_app STATIC ${APP_SOURCES} )
-target_include_directories( line_detector_app PUBLIC ${CMAKE_SOURCE_DIR} )
+target_include_directories( line_detector_app PUBLIC ${CMAKE_SOURCE_DIR}/src/app )
 target_link_libraries( line_detector_app PUBLIC line_detector_lib )
 target_compile_options( line_detector_app PRIVATE -Wall -Wextra )
 
 # --- Executable ---
-add_executable( line_detector main.cpp )
+add_executable( line_detector src/main.cpp )
 target_link_libraries( line_detector PRIVATE line_detector_app )
 target_compile_options( line_detector PRIVATE -Wall -Wextra )
 

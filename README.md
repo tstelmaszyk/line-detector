@@ -152,7 +152,7 @@ Le résultat annoté est écrit dans `out/output.jpg`.
 Construire l'image une fois :
 
 ```sh
-docker build -t line-detector .
+docker build -t line-detector -f docker/Dockerfile .
 ```
 
 Puis compiler et exécuter, en montant les sources :
@@ -354,17 +354,18 @@ Deux cibles CMake matérialisent la frontière :
 
 | Fichier / dossier | Rôle |
 |---|---|
-| `main.cpp` | assemblage : arguments, source, détecteur, observateurs, boucle |
-| `DetectLines.*` | orchestration du pipeline (`compute` / `render`) |
-| `LaneMask.*`, `PerspectiveView.*`, `SlidingWindowSearch.*` | étapes 1 à 3 |
-| `LanePolynomial.*`, `LaneGeometry.*`, `LaneOverlay.*` | étapes 4 à 6 |
-| `LaneConfig.h` | **tous** les réglages (seuils, calibration, fenêtres) |
-| `LaneModel.h` | le signal de pilotage produit |
-| `CliOptions.*`, `FrameSource.h`, `FrameObserver.h`, `PipelineRunner.*` | couche application |
-| `ImageSink.h`, `DiskImageSink.*`, `NullImageSink.h` | écriture des images (résultat et debug) |
+| `src/main.cpp` | assemblage : arguments, source, détecteur, observateurs, boucle |
+| `src/lib/` | `line_detector_lib` — le pipeline de détection (étapes 1 à 6) |
+| `src/lib/DetectLines.*` | orchestration du pipeline (`compute` / `render`) |
+| `src/lib/LaneMask.*`, `PerspectiveView.*`, `SlidingWindowSearch.*` | étapes 1 à 3 |
+| `src/lib/LanePolynomial.*`, `LaneGeometry.*`, `LaneOverlay.*` | étapes 4 à 6 |
+| `src/lib/LaneConfig.h` | **tous** les réglages (seuils, calibration, fenêtres) |
+| `src/lib/LaneModel.h` | le signal de pilotage produit |
+| `src/lib/ImageSink.h`, `DiskImageSink.*`, `NullImageSink.h` | écriture des images (résultat et debug) |
+| `src/app/` | `line_detector_app` — le harnais : `CliOptions.*`, `FrameSource.h`, `FrameObserver.h`, `PipelineRunner.*` |
 | `tests/` | suite doctest (`line_detector_tests`) |
 | `CMakeLists.txt` | cibles `line_detector_lib`, `line_detector_app`, exécutable, tests |
-| `Dockerfile`, `.dockerignore`, `.devcontainer/` | environnement de build reproductible |
+| `docker/Dockerfile`, `docker/Dockerfile.dockerignore`, `.devcontainer/` | environnement de build reproductible |
 | `tools/make_test_image.py` | génère les images de test dans `img_piste/` |
 
 ---
