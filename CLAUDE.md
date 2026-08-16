@@ -249,9 +249,12 @@ Distinction stricte, appliquée dans tout le pipeline :
   possède aucune boucle : `cv::VideoCapture` vit côté application.
 - **Dossier de sortie** : par défaut `out`, surchargeable par la variable d'environnement
   `LINE_DETECTOR_OUT`. `cv::imwrite`/`cv::VideoWriter` ne créent pas ce dossier :
-  `main` le crée désormais lui-même (`std::filesystem::create_directories`) avant de
-  construire le moindre sink, donc un `out/` absent n'est plus une raison d'échec —
-  utile en particulier au premier lancement d'une caméra.
+  `main` le crée lui-même (`std::filesystem::create_directories`), mais **seulement
+  si quelque chose sera effectivement écrit** — `--record`, ou `LINE_DETECTOR_DEBUG`
+  (cf. « Couche application »). Sans l'un ou l'autre, aucun dossier n'est créé ni
+  validé : un `out/` inutilisable n'est alors pas une raison d'échec, puisque rien
+  n'en a besoin — utile en particulier au premier lancement d'une caméra sans
+  `--record`.
 - **Traces de debug en mode flux** : les noms de fichiers sont fixes, donc chaque frame
   écrase la précédente — la dernière frame gagne. Voulu : les traces servent à caler la
   calibration BEV, pas à archiver la séquence.
