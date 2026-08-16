@@ -172,23 +172,33 @@ int main( int argc, char** argv )
   const char* output_dir_env = ::std::getenv( OUTPUT_DIR_ENV_VAR );
   const ::std::string output_dir = ( nullptr != output_dir_env ) ? output_dir_env : DEFAULT_OUTPUT_DIR;
 
-  // cv::imwrite ne cree pas le dossier de sortie : on le cree ici, avant tout sink.
-  // Version non-levante : un dossier deja present n'est pas une erreur (create_directories
-  // rend false sans lever), mais des droits insuffisants ou un fichier deja present a ce
-  // chemin ne doivent pas terminer le process par une exception non rattrapee.
-  ::std::error_code create_directory_error;
-  ::std::filesystem::create_directories( output_dir, create_directory_error );
-
-  const bool output_dir_usable = ::std::filesystem::is_directory( output_dir, create_directory_error );
-
-  if ( !output_dir_usable )
-    {
-    ::std::cerr << MESSAGE_OUTPUT_DIR_FAILED_PREFIX << output_dir << ::std::endl;
-    return EXIT_FAILURE;
-    }
-
   const char* debug_env = ::std::getenv( DEBUG_ENV_VAR );
   const bool debug_enabled = ( nullptr != debug_env ) && ( '\0' != debug_env[0] );
+
+  // Le dossier de sortie n'est necessaire que si quelque chose sera ecrit :
+  // le resultat avec --record, ou les traces avec LINE_DETECTOR_DEBUG. Sans
+  // cela, le programme n'ecrit aucun fichier et ne doit pas echouer sur un
+  // dossier de sortie inutilisable (camera en tete, rootfs eventuellement
+  // en lecture seule).
+  const bool needs_output_dir = ( options.record || debug_enabled );
+
+  if ( needs_output_dir )
+    {
+    // cv::imwrite ne cree pas le dossier de sortie : on le cree ici, avant tout sink.
+    // Version non-levante : un dossier deja present n'est pas une erreur (create_directories
+    // rend false sans lever), mais des droits insuffisants ou un fichier deja present a ce
+    // chemin ne doivent pas terminer le process par une exception non rattrapee.
+    ::std::error_code create_directory_error;
+    ::std::filesystem::create_directories( output_dir, create_directory_error );
+
+    const bool output_dir_usable = ::std::filesystem::is_directory( output_dir, create_directory_error );
+
+    if ( !output_dir_usable )
+      {
+      ::std::cerr << MESSAGE_OUTPUT_DIR_FAILED_PREFIX << output_dir << ::std::endl;
+      return EXIT_FAILURE;
+      }
+    }
 
   ::std::unique_ptr< ImageSink > debug_sink;
 
