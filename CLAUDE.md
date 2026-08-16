@@ -248,8 +248,10 @@ Distinction stricte, appliquée dans tout le pipeline :
   par défaut fonctionnent (précision géométrique dégradée seulement).
 - **Traces de debug** : exécuter avec `LINE_DETECTOR_DEBUG` non vide
   (`LINE_DETECTOR_DEBUG=1 ./line_detector`) écrit les étapes intermédiaires :
-  `out/debug_01_mask.jpg`, `debug_02_bev.jpg`, `debug_03_windows.jpg`,
-  `debug_04_fit.jpg`, `debug_05_overlay.jpg`. Sans la variable, aucune trace
+  `out/debug_01_mask.jpg`, `debug_02_bev.jpg`, `debug_03_windows.jpg` et
+  `debug_04_fit.jpg` sont écrits dès que la variable est définie (ils viennent de
+  `compute`) ; `debug_05_overlay.jpg` demande **en plus** `--record` (il vient de
+  `render`, cf. « Couche application »). Sans la variable, aucune trace
   (`NullImageSink`). Choix **runtime** : pas d'option CMake.
 - **Conteneurisation** : `Dockerfile` (base `debian:bookworm-slim`) installe
   OpenCV via apt et compile le projet. `tools/make_test_image.py` (Pillow) génère
