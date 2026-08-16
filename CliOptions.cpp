@@ -14,6 +14,7 @@ namespace
 const ::std::string FLAG_IMAGE = "--image";    ///< Flag du mode image fixe.
 const ::std::string FLAG_VIDEO = "--video";    ///< Flag du mode fichier vidéo.
 const ::std::string FLAG_CAMERA = "--camera";  ///< Flag du mode caméra.
+const ::std::string FLAG_RECORD = "--record";  ///< Flag d'ecriture du resultat.
 
 const ::std::string ERROR_CONFLICTING_MODES =
   "Modes exclusifs : un seul parmi --image, --video, --camera";  ///< Deux modes demandés.
@@ -128,6 +129,11 @@ int parse_arguments( int p_argument_count, char** p_arguments, CliOptions& p_opt
           argument_index = argument_index + 1;
           }
         }
+      }
+    else if ( FLAG_RECORD == argument )
+      {
+      p_options.record = true;
+      argument_index = argument_index + 1;
       }
     else
       {

@@ -26,6 +26,7 @@ struct CliOptions
   e_source_kind source_kind = SOURCE_KIND_IMAGE;  ///< Mode demandé.
   ::std::string input_path = DEFAULT_IMAGE_PATH;  ///< Chemin (modes image et vidéo).
   int camera_index = DEFAULT_CAMERA_INDEX;        ///< Index caméra (mode caméra).
+  bool record = false;                            ///< true si --record est passé : écrit le résultat sur disque.
   ::std::string error_message;                    ///< Vide si les arguments sont valides.
   };
 

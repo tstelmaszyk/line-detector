@@ -44,7 +44,7 @@ const double OUTPUT_VIDEO_FPS = 30.0;                        ///< Cadence décla
 const double MILLISECONDS_PER_SECOND = 1000.0;               ///< Conversion ms -> s.
 
 const ::std::string USAGE_MESSAGE =
-  "Usage : line_detector [--image <chemin> | --video <chemin> | --camera [index]]";  ///< Aide.
+  "Usage : line_detector [--image <chemin> | --video <chemin> | --camera [index]] [--record]";  ///< Aide.
 
 const ::std::string MESSAGE_UNABLE_TO_OPEN_SOURCE =
   "Impossible d'ouvrir la source demandee.";                             ///< Source non ouverte.
@@ -211,26 +211,34 @@ int main( int argc, char** argv )
 
   const DetectLines detector( video_properties, config, *debug_sink );
 
-  // 6. Observateurs : log toujours, puis image (mode image) ou video (mode flux).
+  // 6. Observateurs : le log CSV est toujours present ; les ecritures ne le sont
+  // que si --record est passe. Sans writer, aucun observateur ne reclame l'image
+  // annotee et le rendu n'est jamais execute.
   LaneModelLogger logger( ::std::cout );
-  DiskImageSink result_sink( output_dir );
-  ResultImageWriter image_writer( result_sink, OUTPUT_IMAGE_NAME );
-
-  const ::std::string video_path = output_dir + PATH_SEPARATOR + OUTPUT_VIDEO_NAME;
-  AnnotatedVideoWriter video_writer( video_path, OUTPUT_VIDEO_FPS );
-
-  const bool is_still_image = ( SOURCE_KIND_IMAGE == options.source_kind );
 
   ::std::vector< FrameObserver* > observers;
   observers.push_back( &logger );
 
-  if ( is_still_image )
+  const bool is_still_image = ( SOURCE_KIND_IMAGE == options.source_kind );
+  const ::std::string video_path = output_dir + PATH_SEPARATOR + OUTPUT_VIDEO_NAME;
+
+  ::std::unique_ptr< DiskImageSink > result_sink;
+  ::std::unique_ptr< ResultImageWriter > image_writer;
+  ::std::unique_ptr< AnnotatedVideoWriter > video_writer;
+
+  if ( options.record )
     {
-    observers.push_back( &image_writer );
-    }
-  else
-    {
-    observers.push_back( &video_writer );
+    if ( is_still_image )
+      {
+      result_sink = ::std::make_unique< DiskImageSink >( output_dir );
+      image_writer = ::std::make_unique< ResultImageWriter >( *result_sink, OUTPUT_IMAGE_NAME );
+      observers.push_back( image_writer.get() );
+      }
+    else
+      {
+      video_writer = ::std::make_unique< AnnotatedVideoWriter >( video_path, OUTPUT_VIDEO_FPS );
+      observers.push_back( video_writer.get() );
+      }
     }
 
   // 7. Arret propre : sans cela, Ctrl-C laisse la video de sortie inexploitable.
@@ -248,8 +256,8 @@ int main( int argc, char** argv )
     }
 
   // 9. Verification des sorties.
-  const bool image_failed = ( is_still_image && image_writer.has_failed() );
-  const bool video_failed = ( !is_still_image && video_writer.has_failed() );
+  const bool image_failed = ( nullptr != image_writer ) && image_writer->has_failed();
+  const bool video_failed = ( nullptr != video_writer ) && video_writer->has_failed();
 
   if ( image_failed )
     {
@@ -278,8 +286,12 @@ int main( int argc, char** argv )
               << MESSAGE_SUMMARY_FPS_PREFIX << frames_per_second
               << MESSAGE_SUMMARY_FPS_SUFFIX << ::std::endl;
 
-  const ::std::string result_name = is_still_image ? OUTPUT_IMAGE_NAME : OUTPUT_VIDEO_NAME;
-  ::std::cerr << MESSAGE_RESULT_WRITTEN_PREFIX << output_dir << PATH_SEPARATOR << result_name << ::std::endl;
+  if ( options.record )
+    {
+    const ::std::string result_name = is_still_image ? OUTPUT_IMAGE_NAME : OUTPUT_VIDEO_NAME;
+    ::std::cerr << MESSAGE_RESULT_WRITTEN_PREFIX << output_dir << PATH_SEPARATOR
+                << result_name << ::std::endl;
+    }
 
   return EXIT_SUCCESS;
 }

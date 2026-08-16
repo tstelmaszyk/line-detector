@@ -26,7 +26,7 @@ Compiler l'exécutable et lancer sur une image, en montant la source :
 ```sh
 docker run --rm -v "$(pwd):/app" -w /app line-detector \
   bash -c 'cmake -S /app -B /tmp/build && cmake --build /tmp/build --target line_detector -j \
-           && mkdir -p /app/out && cd /app && /tmp/build/line_detector --image img_piste/img2.jpg'
+           && mkdir -p /app/out && cd /app && /tmp/build/line_detector --image img_piste/img2.jpg --record'
 ```
 
 Trois modes, mutuellement exclusifs : `--image <chemin>` (défaut : `img_piste/img2.jpg`),
@@ -37,12 +37,21 @@ réelle de la source (`FrameSource` n'expose volontairement pas de `fps()`, cf.
 Architecture) ; une vidéo issue d'une source plus lente ou plus rapide que 30 fps
 paraîtra donc accélérée ou ralentie à la relecture — ce n'est pas un bug.
 
+**`--record` gouverne l'écriture du résultat, uniformément pour les trois modes**
+(y compris `--image` : la still image reste un cas dégénéré du flux, pas une
+exception). Sans `--record`, le programme n'écrit **aucun fichier** — ni
+`out/output.jpg`, ni `out/output.avi` — et n'exécute **aucun rendu** : aucun
+observateur ne réclamant l'image annotée, `render` n'est jamais appelé
+(`compute_ms`/`render_ms` le montrent : `render_ms` reste à `0`). Le message
+`Resultat ecrit dans : …` n'apparaît que si `--record` est passé.
+
 **`stdout` / `stderr` sont séparés** : `stdout` ne porte **que** la ligne d'en-tête
 puis une ligne CSV par frame
-(`frame_index;lane_detected;normalized_offset;lateral_offset_px;curvature_radius_px;reconstructed;elapsed_ms`,
+(`frame_index;lane_detected;normalized_offset;lateral_offset_px;curvature_radius_px;reconstructed;compute_ms;render_ms`,
 format `std::fixed`, jamais de notation scientifique) ; `stderr` porte tous les
-messages destinés à un humain (erreurs, résumé final frames/détections/ms/FPS,
-chemin du résultat écrit). Rediriger `stdout` seul suffit donc à consommer le
+messages destinés à un humain (erreurs, résumé final frames/détections/ms/FPS —
+dont la part de rendu entre parenthèses —, chemin du résultat écrit si
+`--record`). Rediriger `stdout` seul suffit donc à consommer le
 signal de pilotage sans parser de texte. `Ctrl-C` arrête proprement la boucle et
 ferme le fichier vidéo ; un second `Ctrl-C` termine toujours le processus, même si
 la lecture caméra est bloquée.
@@ -171,19 +180,32 @@ Composants de `line_detector_app` :
   **`CaptureFrameSource`** (enveloppe `cv::VideoCapture`, fabriques statiques
   `from_file`/`from_camera`, non copiable).
 - **`FrameObserver`** (`FrameObserver.h`) — interface `on_frame(index, model,
-  annotated_frame, elapsed_ms)`, notifiée à chaque frame par `PipelineRunner`.
-  Trois implémentations : **`LaneModelLogger`** (une ligne CSV par frame sur un
-  `std::ostream` injecté — `main` lui donne `std::cout`), **`ResultImageWriter`**
-  (mode `--image`, écrit via un `ImageSink`) et **`AnnotatedVideoWriter`** (modes
-  flux, `cv::VideoWriter` ouvert paresseusement à la première frame, non
-  copiable). Chaque implémentation qui écrit expose `has_fatal_error()`
-  (par défaut `false` dans l'interface), qui reflète son `has_failed()`.
+  annotated_frame, compute_ms, render_ms)`, notifiée à chaque frame par
+  `PipelineRunner`. Trois implémentations : **`LaneModelLogger`** (une ligne CSV
+  par frame sur un `std::ostream` injecté — `main` lui donne `std::cout`),
+  **`ResultImageWriter`** (mode `--image`, écrit via un `ImageSink`) et
+  **`AnnotatedVideoWriter`** (modes flux, `cv::VideoWriter` ouvert paresseusement
+  à la première frame, non copiable). Chaque implémentation qui écrit expose
+  `has_fatal_error()` (par défaut `false` dans l'interface), qui reflète son
+  `has_failed()`. Chaque observateur expose aussi `needs_annotated_frame()`
+  (défaut `true` dans l'interface ; redéfini à `false` par `LaneModelLogger`,
+  qui n'exploite que le `LaneModel`). `PipelineRunner` calcule une seule fois, à
+  la construction, si **au moins un** observateur en a besoin ; si aucun n'en a
+  besoin (typiquement : logger seul, sans `--record`), `annotated_frame` reçu
+  par `on_frame` est un `::cv::Mat` **vide** et `DetectLines::render` n'est
+  jamais appelé — un observateur qui rend `false` ne doit pas déréférencer ce
+  `Mat`. Conséquence en debug (`LINE_DETECTOR_DEBUG`) : `debug_01_mask.jpg` à
+  `debug_04_fit.jpg` sont toujours écrits (ils viennent de `compute`), mais
+  `debug_05_overlay.jpg` — écrit dans `LaneOverlay::render`, donc dans
+  `DetectLines::render` — ne l'est **que si `--record` est passé**.
 - **`PipelineRunner` / `RunStats`** (`PipelineRunner.h/.cpp`) — possède la boucle,
-  et seulement elle : lire → `draw_lines` → notifier les observateurs → compter
-  dans un `RunStats` fourni par l'appelant (accumulé, pas réinitialisé par
-  `run`). S'arrête à la fin du flux, sur le drapeau `SIGINT`, ou dès qu'un
-  observateur signale `has_fatal_error()` — utile pour qu'un `out/` en échec
-  d'écriture soit détecté frame par frame plutôt qu'après coup.
+  et seulement elle : lire → `DetectLines::compute` → `DetectLines::render` (si
+  et seulement si un observateur le réclame, cf. ci-dessus) → notifier les
+  observateurs → compter dans un `RunStats` fourni par l'appelant (`compute_ms`
+  et `render_ms` accumulés séparément, non réinitialisé par `run`). S'arrête à
+  la fin du flux, sur le drapeau `SIGINT`, ou dès qu'un observateur signale
+  `has_fatal_error()` — utile pour qu'un `out/` en échec d'écriture soit détecté
+  frame par frame plutôt qu'après coup.
 
 ## Design by contract
 

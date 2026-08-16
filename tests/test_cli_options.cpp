@@ -183,3 +183,38 @@ TEST_CASE( "parse_arguments : index camera hors plage -> echec" )
   CHECK( EXIT_FAILURE == status );
   CHECK( !options.error_message.empty() );
 }
+
+TEST_CASE( "parse_arguments : --record absent par defaut" )
+{
+  ArgumentVector arguments( { "line_detector", "--image", "a.jpg" } );
+  CliOptions options;
+
+  const int status = parse_arguments( arguments.count(), arguments.values(), options );
+
+  CHECK( EXIT_SUCCESS == status );
+  CHECK( false == options.record );
+}
+
+TEST_CASE( "parse_arguments : --record avec chaque mode" )
+{
+  ArgumentVector image_arguments( { "line_detector", "--image", "a.jpg", "--record" } );
+  CliOptions image_options;
+  const int image_status = parse_arguments( image_arguments.count(), image_arguments.values(), image_options );
+
+  ArgumentVector video_arguments( { "line_detector", "--record", "--video", "b.avi" } );
+  CliOptions video_options;
+  const int video_status = parse_arguments( video_arguments.count(), video_arguments.values(), video_options );
+
+  ArgumentVector camera_arguments( { "line_detector", "--camera", "1", "--record" } );
+  CliOptions camera_options;
+  const int camera_status = parse_arguments( camera_arguments.count(), camera_arguments.values(), camera_options );
+
+  CHECK( EXIT_SUCCESS == image_status );
+  CHECK( true == image_options.record );
+  CHECK( EXIT_SUCCESS == video_status );
+  CHECK( true == video_options.record );
+  CHECK( SOURCE_KIND_VIDEO == video_options.source_kind );
+  CHECK( EXIT_SUCCESS == camera_status );
+  CHECK( true == camera_options.record );
+  CHECK( 1 == camera_options.camera_index );
+}
