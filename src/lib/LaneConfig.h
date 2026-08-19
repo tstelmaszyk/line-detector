@@ -22,8 +22,16 @@ struct LaneConfig
   int morph_kernel = 3;                   ///< Ouverture morpho du masque final (impair).
 
   // --- BEV (PerspectiveView) ---
-  float src_top_width_ratio = 0.18f;      ///< Demi-largeur du bord haut du quad (fraction de W).
-  float src_top_y_ratio = 0.45f;          ///< Hauteur du bord haut (fraction de H).
+  // TODO(calibration) : ces 4 ratios sont calibres a la main pour la camera du
+  // vehicule (montage tres bas, ~5-6 cm du sol, mesures sur img_piste/koimg.png).
+  // Ce sont des constantes de compilation alors que c'est un reglage propre a
+  // CHAQUE camera/montage : trouver un mecanisme de calibration qui ne force pas
+  // a recompiler (variable d'environnement sur le modele de LINE_DETECTOR_OUT,
+  // fichier de config, ou flag CLI) plutot que de coder en dur ces valeurs ici.
+  float src_top_width_ratio = 0.35f;      ///< Demi-largeur du bord haut du quad (fraction de W).
+  float src_top_y_ratio = 0.10f;          ///< Hauteur du bord haut (fraction de H).
+  float src_bottom_width_ratio = 0.44f;   ///< Demi-largeur du bord bas du quad (fraction de W). 0.5 = plein cadre.
+  float src_bottom_y_ratio = 0.30f;       ///< Hauteur du bord bas (fraction de H). 1.0 = bas de l'image.
   float bev_margin_ratio = 0.20f;         ///< Marge latérale du rectangle BEV (fraction de W).
 
   // --- Fenêtres glissantes (SlidingWindowSearch) ---

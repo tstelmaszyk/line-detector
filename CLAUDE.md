@@ -259,10 +259,18 @@ Distinction stricte, appliquée dans tout le pipeline :
   écrase la précédente — la dernière frame gagne. Voulu : les traces servent à caler la
   calibration BEV, pas à archiver la séquence.
 - **Calibration BEV** : les 4 points source dérivent des ratios
-  `srcTopWidthRatio` / `srcTopYRatio` / `bevMarginRatio` de `LaneConfig`. La régler
-  en inspectant `out/debug_02_bev.jpg` jusqu'à ce que des lignes droites
-  parallèles apparaissent verticales et parallèles. **Non bloquant** : les valeurs
-  par défaut fonctionnent (précision géométrique dégradée seulement).
+  `src_top_width_ratio` / `src_top_y_ratio` (bord haut) et `src_bottom_width_ratio` /
+  `src_bottom_y_ratio` (bord bas) de `LaneConfig`. Par défaut le bord bas colle aux
+  coins de l'image (`src_bottom_y_ratio=1.0`, `src_bottom_width_ratio=0.5`), ce qui
+  suppose que les deux marquages restent dans le cadre jusqu'au bas de l'image —
+  vrai pour une caméra montée haut (~1 m). Pour une caméra très basse (quelques cm
+  du sol), les marquages sortent du cadre par les côtés avant d'atteindre le bas :
+  remonter `src_bottom_y_ratio` et réduire `src_bottom_width_ratio` pour que le bord
+  bas du trapèze reste dans la zone où les deux lignes sont encore visibles. Régler
+  en inspectant `out/debug_02a_trapeze.jpg` (trapèze superposé à l'image source) et
+  `out/debug_02_bev.jpg` jusqu'à ce que des lignes droites parallèles apparaissent
+  verticales et parallèles. **Non bloquant** pour une caméra haute : les valeurs par
+  défaut fonctionnent (précision géométrique dégradée seulement).
 - **Traces de debug** : exécuter avec `LINE_DETECTOR_DEBUG` non vide
   (`LINE_DETECTOR_DEBUG=1 ./line_detector`) écrit les étapes intermédiaires :
   `out/debug_01_mask.jpg`, `debug_02_bev.jpg`, `debug_03_windows.jpg` et

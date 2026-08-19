@@ -19,6 +19,16 @@ static ::cv::Mat make_lane_image( int width, int height, int left_x, int right_x
   return img;
 }
 
+/// @brief Trapeze BEV attendu par make_lane_image (lignes de mi-hauteur au bas,
+/// plein cadre) : independant de la calibration camera reelle de LaneConfig.
+static void configure_synthetic_bev_trapezoid( LaneConfig& p_config )
+{
+  p_config.src_top_y_ratio = 0.45f;
+  p_config.src_top_width_ratio = 0.18f;
+  p_config.src_bottom_y_ratio = 1.0f;
+  p_config.src_bottom_width_ratio = 0.5f;
+}
+
 TEST_CASE( "pipeline complet : voie symetrique -> offset proche de zero" )
 {
   const int width = 1280;
@@ -27,6 +37,7 @@ TEST_CASE( "pipeline complet : voie symetrique -> offset proche de zero" )
   VideoCaracteristics video( img );
   LaneConfig config;
   config.default_lane_width_px = width * 0.5;
+  configure_synthetic_bev_trapezoid( config );
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 
@@ -44,6 +55,7 @@ TEST_CASE( "pipeline complet : voie decalee a droite -> offset negatif" )
   VideoCaracteristics video( img );
   LaneConfig config;
   config.default_lane_width_px = width * 0.5;
+  configure_synthetic_bev_trapezoid( config );
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 

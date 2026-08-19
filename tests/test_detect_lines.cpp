@@ -15,12 +15,23 @@ static ::cv::Mat make_lane_image( int width, int height, int left_x, int right_x
   return img;
 }
 
+/// @brief Trapeze BEV attendu par make_lane_image (lignes de mi-hauteur au bas,
+/// plein cadre) : independant de la calibration camera reelle de LaneConfig.
+static void configure_synthetic_bev_trapezoid( LaneConfig& p_config )
+{
+  p_config.src_top_y_ratio = 0.45f;
+  p_config.src_top_width_ratio = 0.18f;
+  p_config.src_bottom_y_ratio = 1.0f;
+  p_config.src_bottom_width_ratio = 0.5f;
+}
+
 TEST_CASE( "render produit une image a la taille d'origine" )
 {
   ::cv::Mat img = make_lane_image( 1280, 720, 440, 840 );
   VideoCaracteristics video( img );
   LaneConfig config;
   config.default_lane_width_px = 640.0;
+  configure_synthetic_bev_trapezoid( config );
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 
@@ -39,6 +50,7 @@ TEST_CASE( "render est reproductible et ne mute pas le modele" )
   VideoCaracteristics video( img );
   LaneConfig config;
   config.default_lane_width_px = 640.0;
+  configure_synthetic_bev_trapezoid( config );
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 
@@ -79,6 +91,7 @@ TEST_CASE( "render dessine le modele qu'on lui donne, pas celui de la frame" )
   VideoCaracteristics video( first_frame );
   LaneConfig config;
   config.default_lane_width_px = 640.0;
+  configure_synthetic_bev_trapezoid( config );
   NullImageSink sink;
   DetectLines detector( video, config, sink );
 

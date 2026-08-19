@@ -123,6 +123,12 @@ TEST_CASE( "mode video : une voie qui derive produit un offset monotone" )
   VideoCaracteristics video( first_frame );
   LaneConfig config;
   config.default_lane_width_px = DRIFT_WIDTH * DRIFT_LANE_WIDTH_RATIO;
+  // Trapeze BEV attendu par make_drifting_frame (lignes de mi-hauteur au bas,
+  // plein cadre) : independant de la calibration camera reelle de LaneConfig.
+  config.src_top_y_ratio = 0.45f;
+  config.src_top_width_ratio = 0.18f;
+  config.src_bottom_y_ratio = 1.0f;
+  config.src_bottom_width_ratio = 0.5f;
   NullImageSink debug_sink;
   const DetectLines detector( video, config, debug_sink );
 

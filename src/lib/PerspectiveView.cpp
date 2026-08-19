@@ -30,14 +30,18 @@ PerspectiveView::PerspectiveView( const VideoCaracteristics& p_video,
 
   const float top_y = m_config.src_top_y_ratio * height;
   const float top_half = m_config.src_top_width_ratio * width;
+  const float bottom_y = m_config.src_bottom_y_ratio * height;
+  const float bottom_half = m_config.src_bottom_width_ratio * width;
   const float center_x = width / CENTER_DIVISOR;
 
-  // Quad source : trapèze (haut rétréci vers l'horizon, bas plein cadre).
+  // Quad source : trapèze, bords haut et bas tous deux réglables (caméras très
+  // basses : les marquages sortent du cadre avant le bas de l'image, cf.
+  // CLAUDE.md § Calibration BEV).
   m_src_quad = {
-    ::cv::Point2f( center_x - top_half, top_y ),  // haut gauche
-    ::cv::Point2f( center_x + top_half, top_y ),  // haut droit
-    ::cv::Point2f( width, height ),               // bas droit
-    ::cv::Point2f( 0.0f, height )                 // bas gauche
+    ::cv::Point2f( center_x - top_half, top_y ),        // haut gauche
+    ::cv::Point2f( center_x + top_half, top_y ),        // haut droit
+    ::cv::Point2f( center_x + bottom_half, bottom_y ),  // bas droit
+    ::cv::Point2f( center_x - bottom_half, bottom_y )   // bas gauche
   };
 
   // Rectangle BEV, avec marge latérale pour laisser respirer les virages.

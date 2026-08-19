@@ -63,6 +63,12 @@ TEST_CASE( "DetectLines::compute : meme LaneModel avec un NullImageSink" )
   VideoCaracteristics video( frame );
   LaneConfig config;
   config.default_lane_width_px = SINK_TEST_WIDTH * SINK_LANE_WIDTH_RATIO;
+  // Trapeze BEV attendu par make_lane_frame (lignes de mi-hauteur au bas, plein
+  // cadre) : independant de la calibration camera reelle de LaneConfig.
+  config.src_top_y_ratio = 0.45f;
+  config.src_top_width_ratio = 0.18f;
+  config.src_bottom_y_ratio = 1.0f;
+  config.src_bottom_width_ratio = 0.5f;
   NullImageSink sink;
   const DetectLines detector( video, config, sink );
 
