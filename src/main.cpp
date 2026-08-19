@@ -30,6 +30,8 @@
 #include "StillImageFrameSource.h"
 #include "VideoCaracteristics.h"
 
+#include "SmartAssert.h"
+
 namespace
 {
 
@@ -43,30 +45,6 @@ const double DEFAULT_LANE_WIDTH_RATIO = 0.35;                ///< Largeur de voi
 const double OUTPUT_VIDEO_FPS = 30.0;                        ///< Cadence déclarée de la vidéo de sortie.
 const double MILLISECONDS_PER_SECOND = 1000.0;               ///< Conversion ms -> s.
 
-const ::std::string USAGE_MESSAGE =
-  "Usage : line_detector [--image <chemin> | --video <chemin> | --camera [index]] [--record]";  ///< Aide.
-
-const ::std::string MESSAGE_UNABLE_TO_OPEN_SOURCE =
-  "Impossible d'ouvrir la source demandee.";                             ///< Source non ouverte.
-const ::std::string MESSAGE_NO_READABLE_FRAME =
-  "Aucune frame lisible dans la source.";                                ///< Source vide.
-const ::std::string MESSAGE_NO_FRAME_PROCESSED = "Aucune frame traitee.";  ///< Boucle vide.
-const ::std::string MESSAGE_IMAGE_WRITE_FAILED_PREFIX =
-  "Impossible d'ecrire l'image de sortie : ";                            ///< Echec ecriture image.
-const ::std::string MESSAGE_VIDEO_WRITE_FAILED_PREFIX =
-  "Impossible d'ecrire la video de sortie : ";                           ///< Echec ecriture video.
-const ::std::string MESSAGE_OUTPUT_DIR_FAILED_PREFIX =
-  "Impossible de creer ou d'utiliser le dossier de sortie : ";           ///< Echec dossier de sortie.
-const ::std::string MESSAGE_SUMMARY_FRAMES_PREFIX = "Frames : ";                    ///< Resume : frames.
-const ::std::string MESSAGE_SUMMARY_DETECTED_PREFIX = " | detectees : ";            ///< Resume : detections.
-const ::std::string MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX = " | reconstruites : ";   ///< Resume : reconstructions.
-const ::std::string MESSAGE_SUMMARY_AVERAGE_PREFIX = " | moyenne : ";               ///< Resume : moyenne ms.
-const ::std::string MESSAGE_SUMMARY_MS_PER_FRAME_SUFFIX = " ms/frame";              ///< Resume : suffixe ms/frame.
-const ::std::string MESSAGE_SUMMARY_RENDER_PREFIX = " (dont ";                      ///< Resume : part du rendu.
-const ::std::string MESSAGE_SUMMARY_RENDER_SUFFIX = " ms de rendu)";                ///< Resume : fin rendu.
-const ::std::string MESSAGE_SUMMARY_FPS_PREFIX = " (";                              ///< Resume : ouverture FPS.
-const ::std::string MESSAGE_SUMMARY_FPS_SUFFIX = " FPS)";                           ///< Resume : fermeture FPS.
-const ::std::string MESSAGE_RESULT_WRITTEN_PREFIX = "Resultat ecrit dans : ";       ///< Resume : chemin resultat.
 
 /// @brief Drapeau d'arrêt levé par le handler SIGINT.
 ::std::atomic< bool > g_stop_requested( false );
@@ -141,32 +119,17 @@ int main( int argc, char** argv )
   // 1. Analyse des arguments.
   CliOptions options;
   const int parse_status = parse_arguments( argc, argv, options );
-
-  if ( EXIT_SUCCESS != parse_status )
-    {
-    ::std::cerr << options.error_message << ::std::endl;
-    ::std::cerr << USAGE_MESSAGE << ::std::endl;
-    return EXIT_FAILURE;
-    }
+  SMART_ASSERT( EXIT_SUCCESS == parse_status, "Erreur lors de l'analyse des arguments." );
 
   // 2. Ouverture de la source de frames.
   ::std::unique_ptr< FrameSource > frame_source = make_frame_source( options );
+  SMART_ASSERT( nullptr != frame_source, "Impossible d'ouvrir la source demandee." );
 
-  if ( nullptr == frame_source )
-    {
-    ::std::cerr << MESSAGE_UNABLE_TO_OPEN_SOURCE << ::std::endl;
-    return EXIT_FAILURE;
-    }
 
   // 3. Premiere frame : elle definit la geometrie de tout le pipeline.
   ::cv::Mat first_frame;
   const bool first_read_ok = frame_source->read( first_frame );
-
-  if ( !first_read_ok )
-    {
-    ::std::cerr << MESSAGE_NO_READABLE_FRAME << ::std::endl;
-    return EXIT_FAILURE;
-    }
+  SMART_ASSERT( first_read_ok, "Aucune frame lisible dans la source." );
 
   // 4. Dossier de sortie et traces de debug.
   const char* output_dir_env = ::std::getenv( OUTPUT_DIR_ENV_VAR );
@@ -192,12 +155,7 @@ int main( int argc, char** argv )
     ::std::filesystem::create_directories( output_dir, create_directory_error );
 
     const bool output_dir_usable = ::std::filesystem::is_directory( output_dir, create_directory_error );
-
-    if ( !output_dir_usable )
-      {
-      ::std::cerr << MESSAGE_OUTPUT_DIR_FAILED_PREFIX << output_dir << ::std::endl;
-      return EXIT_FAILURE;
-      }
+    SMART_ASSERT( output_dir_usable, "Impossible de creer ou d'utiliser le dossier de sortie" );
     }
 
   ::std::unique_ptr< ImageSink > debug_sink;
@@ -259,28 +217,14 @@ int main( int argc, char** argv )
   RunStats stats;
   const int run_status = runner.run( first_frame, stats );
 
-  if ( EXIT_SUCCESS != run_status )
-    {
-    ::std::cerr << MESSAGE_NO_FRAME_PROCESSED << ::std::endl;
-    return EXIT_FAILURE;
-    }
+  SMART_ASSERT( EXIT_SUCCESS == run_status, "Aucune frame traitee." );
 
   // 9. Verification des sorties.
   const bool image_failed = ( nullptr != image_writer ) && image_writer->has_failed();
   const bool video_failed = ( nullptr != video_writer ) && video_writer->has_failed();
 
-  if ( image_failed )
-    {
-    ::std::cerr << MESSAGE_IMAGE_WRITE_FAILED_PREFIX
-                << output_dir << PATH_SEPARATOR << OUTPUT_IMAGE_NAME << ::std::endl;
-    return EXIT_FAILURE;
-    }
-
-  if ( video_failed )
-    {
-    ::std::cerr << MESSAGE_VIDEO_WRITE_FAILED_PREFIX << video_path << ::std::endl;
-    return EXIT_FAILURE;
-    }
+  SMART_ASSERT( !image_failed, "Impossible d'ecrire l'image de sortie" );
+  SMART_ASSERT( !video_failed, "Impossible d'ecrire la video de sortie" );
 
   // 10. Resume.
   const double total_ms = stats.compute_ms + stats.render_ms;
@@ -288,18 +232,17 @@ int main( int argc, char** argv )
   const double average_render_ms = stats.render_ms / static_cast< double >( stats.frame_count );
   const double frames_per_second = MILLISECONDS_PER_SECOND / average_ms;
 
-  ::std::cerr << MESSAGE_SUMMARY_FRAMES_PREFIX << stats.frame_count
-              << MESSAGE_SUMMARY_DETECTED_PREFIX << stats.detected_count
-              << MESSAGE_SUMMARY_RECONSTRUCTED_PREFIX << stats.reconstructed_count
-              << MESSAGE_SUMMARY_AVERAGE_PREFIX << average_ms << MESSAGE_SUMMARY_MS_PER_FRAME_SUFFIX
-              << MESSAGE_SUMMARY_RENDER_PREFIX << average_render_ms << MESSAGE_SUMMARY_RENDER_SUFFIX
-              << MESSAGE_SUMMARY_FPS_PREFIX << frames_per_second
-              << MESSAGE_SUMMARY_FPS_SUFFIX << ::std::endl;
+  ::std::cerr << " Frames : " << stats.frame_count
+              << " | detectees : " << stats.detected_count
+              << " | reconstruites : " << stats.reconstructed_count
+              << " | moyenne : " << average_ms << " ms/frame"
+              << " (dont " << average_render_ms << " ms de rendu)"
+              << " (" << frames_per_second<< " FPS)" << ::std::endl;
 
   if ( options.record )
     {
     const ::std::string result_name = is_still_image ? OUTPUT_IMAGE_NAME : OUTPUT_VIDEO_NAME;
-    ::std::cerr << MESSAGE_RESULT_WRITTEN_PREFIX << output_dir << PATH_SEPARATOR
+    ::std::cerr << "Resultat ecrit dans : " << output_dir << PATH_SEPARATOR
                 << result_name << ::std::endl;
     }
 
