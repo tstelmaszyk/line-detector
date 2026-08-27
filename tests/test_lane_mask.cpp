@@ -2,10 +2,10 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include "LaneConfig.h"
-#include "LaneMask.h"
-#include "NullImageSink.h"
-#include "VideoCaracteristics.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "LaneMask/LaneMask.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 TEST_CASE( "LaneMask isole une bande blanche et ignore la route grise unie" )
 {

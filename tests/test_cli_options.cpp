@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "CliOptions.h"
+#include "CliOptions/CliOptions.h"
 
 namespace
 {

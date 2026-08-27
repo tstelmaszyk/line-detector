@@ -2,12 +2,12 @@
 
 #include <opencv2/core.hpp>
 
-#include "LaneConfig.h"
-#include "LaneModel.h"
-#include "LaneOverlay.h"
-#include "NullImageSink.h"
-#include "PerspectiveView.h"
-#include "VideoCaracteristics.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "LaneModel/LaneModel.h"
+#include "LaneOverlay/LaneOverlay.h"
+#include "PerspectiveView/PerspectiveView.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 TEST_CASE( "render preserve taille/type et modifie des pixels quand la voie est detectee" )
 {

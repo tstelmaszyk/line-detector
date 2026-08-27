@@ -3,7 +3,7 @@
 #include <cmath>
 #include <vector>
 
-#include "LanePolynomial.h"
+#include "LanePolynomial/LanePolynomial.h"
 
 TEST_CASE( "fit retrouve une parabole connue x = 2y^2 + 3y + 5" )
 {

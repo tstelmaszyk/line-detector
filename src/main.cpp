@@ -13,24 +13,24 @@
 #include <system_error>
 #include <vector>
 
-#include "AnnotatedVideoWriter.h"
-#include "CaptureFrameSource.h"
-#include "CliOptions.h"
-#include "DetectLines.h"
-#include "DiskImageSink.h"
-#include "FrameObserver.h"
-#include "FrameSource.h"
-#include "ImageSink.h"
-#include "LaneConfig.h"
-#include "LaneModelLogger.h"
-#include "NullImageSink.h"
-#include "PipelineRunner.h"
-#include "ResultImageWriter.h"
-#include "RunStats.h"
-#include "StillImageFrameSource.h"
-#include "VideoCaracteristics.h"
+#include "CliOptions/CliOptions.h"
+#include "DetectLines/DetectLines.h"
+#include "FrameObserver/AnnotatedVideoWriter.h"
+#include "FrameObserver/FrameObserver.h"
+#include "FrameObserver/LaneModelLogger.h"
+#include "FrameObserver/ResultImageWriter.h"
+#include "FrameSource/CaptureFrameSource.h"
+#include "FrameSource/FrameSource.h"
+#include "FrameSource/StillImageFrameSource.h"
+#include "ImageSink/DiskImageSink.h"
+#include "ImageSink/ImageSink.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "PipelineRunner/PipelineRunner.h"
+#include "RunStats/RunStats.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
-#include "SmartAssert.h"
+#include "SmartAssert/SmartAssert.h"
 
 namespace
 {

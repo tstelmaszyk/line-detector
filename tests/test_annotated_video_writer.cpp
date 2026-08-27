@@ -5,8 +5,8 @@
 
 #include <string>
 
-#include "AnnotatedVideoWriter.h"
-#include "LaneModel.h"
+#include "FrameObserver/AnnotatedVideoWriter.h"
+#include "LaneModel/LaneModel.h"
 #include "test_support.h"
 
 namespace

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "SmartAssert.h"
+#include "SmartAssert/SmartAssert.h"
 
 TEST_CASE( "smart_assert::format contient fichier, ligne, condition et message" )
 {

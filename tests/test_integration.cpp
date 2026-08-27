@@ -4,12 +4,12 @@
 
 #include <cmath>
 
-#include "DetectLines.h"
-#include "LaneConfig.h"
-#include "LanePolynomial.h"
-#include "NullImageSink.h"
-#include "SlidingWindowSearch.h"
-#include "VideoCaracteristics.h"
+#include "DetectLines/DetectLines.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "LanePolynomial/LanePolynomial.h"
+#include "SlidingWindowSearch/SlidingWindowSearch.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 static ::cv::Mat make_lane_image( int width, int height, int left_x, int right_x )
 {

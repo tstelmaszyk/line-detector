@@ -2,10 +2,10 @@
 
 #include <opencv2/core.hpp>
 
-#include "LaneConfig.h"
-#include "LaneGeometry.h"
-#include "LaneModel.h"
-#include "VideoCaracteristics.h"
+#include "LaneConfig/LaneConfig.h"
+#include "LaneGeometry/LaneGeometry.h"
+#include "LaneModel/LaneModel.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 static LanePolynomial straight( double x )
 {

@@ -2,10 +2,10 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include "DetectLines.h"
-#include "LaneConfig.h"
-#include "NullImageSink.h"
-#include "VideoCaracteristics.h"
+#include "DetectLines/DetectLines.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 static ::cv::Mat make_lane_image( int width, int height, int left_x, int right_x )
 {

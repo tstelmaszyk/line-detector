@@ -1,6 +1,6 @@
 #include "doctest.h"
 
-#include "LaneConfig.h"
+#include "LaneConfig/LaneConfig.h"
 
 TEST_CASE( "LaneConfig fournit des valeurs par defaut saines" )
 {

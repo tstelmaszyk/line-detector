@@ -5,11 +5,11 @@
 
 #include <cmath>
 
-#include "DetectLines.h"
-#include "DiskImageSink.h"
-#include "LaneConfig.h"
-#include "NullImageSink.h"
-#include "VideoCaracteristics.h"
+#include "DetectLines/DetectLines.h"
+#include "ImageSink/DiskImageSink.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 #include "test_support.h"
 
 namespace

@@ -7,15 +7,15 @@
 #include <cstdlib>
 #include <vector>
 
-#include "DetectLines.h"
-#include "FrameObserver.h"
-#include "FrameSource.h"
-#include "LaneConfig.h"
-#include "LaneModel.h"
-#include "NullImageSink.h"
-#include "PipelineRunner.h"
-#include "RunStats.h"
-#include "VideoCaracteristics.h"
+#include "DetectLines/DetectLines.h"
+#include "FrameObserver/FrameObserver.h"
+#include "FrameSource/FrameSource.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "LaneModel/LaneModel.h"
+#include "PipelineRunner/PipelineRunner.h"
+#include "RunStats/RunStats.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 namespace
 {

@@ -2,10 +2,10 @@
 
 #include <opencv2/imgproc.hpp>
 
-#include "LaneConfig.h"
-#include "NullImageSink.h"
-#include "SlidingWindowSearch.h"
-#include "VideoCaracteristics.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "SlidingWindowSearch/SlidingWindowSearch.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 TEST_CASE( "search separe deux bandes verticales en cotes gauche/droite" )
 {

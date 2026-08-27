@@ -9,14 +9,14 @@ message(STATUS "OpenCV_LIBS = ${OpenCV_LIBS}")
 # --- Bibliotheque : pipeline de detection ---
 # Rien ici ne lit argv, n'ecrit sur stdout, ni ne possede de boucle de capture.
 set(LANE_SOURCES
-    src/lib/DetectLines.cpp
-    src/lib/DiskImageSink.cpp
-    src/lib/LanePolynomial.cpp
-    src/lib/LaneGeometry.cpp
-    src/lib/LaneMask.cpp
-    src/lib/PerspectiveView.cpp
-    src/lib/SlidingWindowSearch.cpp
-    src/lib/LaneOverlay.cpp
+    src/lib/DetectLines/DetectLines.cpp
+    src/lib/ImageSink/DiskImageSink.cpp
+    src/lib/LanePolynomial/LanePolynomial.cpp
+    src/lib/LaneGeometry/LaneGeometry.cpp
+    src/lib/LaneMask/LaneMask.cpp
+    src/lib/PerspectiveView/PerspectiveView.cpp
+    src/lib/SlidingWindowSearch/SlidingWindowSearch.cpp
+    src/lib/LaneOverlay/LaneOverlay.cpp
 )
 
 add_library( line_detector_lib STATIC ${LANE_SOURCES} )
@@ -25,13 +25,13 @@ target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 
 # --- Bibliotheque applicative : capture, boucle, sorties dev/test ---
 set(APP_SOURCES
-    src/app/AnnotatedVideoWriter.cpp
-    src/app/CaptureFrameSource.cpp
-    src/app/CliOptions.cpp
-    src/app/LaneModelLogger.cpp
-    src/app/PipelineRunner.cpp
-    src/app/ResultImageWriter.cpp
-    src/app/StillImageFrameSource.cpp
+    src/app/FrameObserver/AnnotatedVideoWriter.cpp
+    src/app/FrameSource/CaptureFrameSource.cpp
+    src/app/CliOptions/CliOptions.cpp
+    src/app/FrameObserver/LaneModelLogger.cpp
+    src/app/PipelineRunner/PipelineRunner.cpp
+    src/app/FrameObserver/ResultImageWriter.cpp
+    src/app/FrameSource/StillImageFrameSource.cpp
 )
 
 add_library( line_detector_app STATIC ${APP_SOURCES} )

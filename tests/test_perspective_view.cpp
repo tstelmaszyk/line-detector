@@ -4,10 +4,10 @@
 
 #include <vector>
 
-#include "LaneConfig.h"
-#include "NullImageSink.h"
-#include "PerspectiveView.h"
-#include "VideoCaracteristics.h"
+#include "ImageSink/NullImageSink.h"
+#include "LaneConfig/LaneConfig.h"
+#include "PerspectiveView/PerspectiveView.h"
+#include "VideoCaracteristics/VideoCaracteristics.h"
 
 TEST_CASE( "to_bev produit une image a la taille BEV" )
 {

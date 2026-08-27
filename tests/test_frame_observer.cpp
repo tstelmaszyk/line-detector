@@ -5,12 +5,12 @@
 #include <sstream>
 #include <string>
 
-#include "AnnotatedVideoWriter.h"
-#include "FrameObserver.h"
-#include "ImageSink.h"
-#include "LaneModel.h"
-#include "LaneModelLogger.h"
-#include "ResultImageWriter.h"
+#include "FrameObserver/AnnotatedVideoWriter.h"
+#include "FrameObserver/FrameObserver.h"
+#include "FrameObserver/LaneModelLogger.h"
+#include "FrameObserver/ResultImageWriter.h"
+#include "ImageSink/ImageSink.h"
+#include "LaneModel/LaneModel.h"
 #include "test_support.h"
 
 namespace

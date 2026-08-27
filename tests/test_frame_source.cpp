@@ -7,8 +7,8 @@
 #include <memory>
 #include <string>
 
-#include "CaptureFrameSource.h"
-#include "StillImageFrameSource.h"
+#include "FrameSource/CaptureFrameSource.h"
+#include "FrameSource/StillImageFrameSource.h"
 #include "test_support.h"
 
 namespace
