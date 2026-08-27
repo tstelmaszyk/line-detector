@@ -18,7 +18,7 @@ CaptureFrameSource::CaptureFrameSource()
   return source;
 }
 
-::std::unique_ptr< CaptureFrameSource > CaptureFrameSource::from_camera( int p_camera_index )
+::std::unique_ptr< CaptureFrameSource > CaptureFrameSource::from_camera( CameraIndex p_camera_index )
 {
   ::std::unique_ptr< CaptureFrameSource > source( new CaptureFrameSource() );
   source->m_capture.open( p_camera_index );

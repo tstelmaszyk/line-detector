@@ -128,7 +128,7 @@ int parse_arguments( int p_argument_count, char** p_arguments, CliOptions& p_opt
             return EXIT_FAILURE;
             }
 
-          p_options.camera_index = static_cast< int >( converted_index );
+          p_options.camera_index = static_cast< CameraIndex >( converted_index );
           argument_index = argument_index + 1;
           }
         }

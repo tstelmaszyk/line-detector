@@ -10,6 +10,7 @@
 #include <string>
 
 #include "FrameSource/FrameSource.h"
+#include "projectTypes.h"
 
 /// @brief Source de frames lisant un fichier vidéo ou une caméra.
 ///
@@ -27,7 +28,7 @@ class CaptureFrameSource : public FrameSource
     /// @brief Fabrique une source lisant une caméra.
     /// @param p_camera_index Index de la caméra.
     /// @return Source construite (vérifier is_opened()).
-    static ::std::unique_ptr< CaptureFrameSource > from_camera( int p_camera_index );
+    static ::std::unique_ptr< CaptureFrameSource > from_camera( CameraIndex p_camera_index );
 
     /// @brief Non copiable : possède une cv::VideoCapture ouverte sur une ressource.
     CaptureFrameSource( const CaptureFrameSource& p_other ) = delete;

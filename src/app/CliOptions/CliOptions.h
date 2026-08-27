@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "projectTypes.h"
+
 /// @brief Nature de la source de frames demandée.
 enum e_source_kind
   {
@@ -21,14 +23,14 @@ extern const ::std::string USAGE_MESSAGE;
 static const ::std::string DEFAULT_IMAGE_PATH = "img_piste/img2.jpg";
 
 /// @brief Index de caméra utilisé quand --camera est donné sans valeur.
-static const int DEFAULT_CAMERA_INDEX = 0;
+static const CameraIndex DEFAULT_CAMERA_INDEX = 0;
 
 /// @brief Options issues de la ligne de commande.
 struct CliOptions
   {
   e_source_kind source_kind = SOURCE_KIND_IMAGE;  ///< Mode demandé.
   ::std::string input_path = DEFAULT_IMAGE_PATH;  ///< Chemin (modes image et vidéo).
-  int camera_index = DEFAULT_CAMERA_INDEX;        ///< Index caméra (mode caméra).
+  CameraIndex camera_index = DEFAULT_CAMERA_INDEX;  ///< Index caméra (mode caméra).
   bool record = false;                            ///< true si --record est passé : écrit le résultat sur disque.
   ::std::string error_message;                    ///< Vide si les arguments sont valides.
   };

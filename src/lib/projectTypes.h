@@ -16,3 +16,6 @@ typedef double DurationMs;
 
 /// @brief Distance ou écart exprimé en pixels BEV (peut être négatif).
 typedef double PixelOffset;
+
+/// @brief Index d'un périphérique caméra (identifiant `cv::VideoCapture`).
+typedef int CameraIndex;
