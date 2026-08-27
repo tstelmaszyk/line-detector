@@ -8,6 +8,9 @@
 
 #include "CliOptions.h"
 
+const ::std::string USAGE_MESSAGE =
+  "Usage : line_detector [--image <chemin> | --video <chemin> | --camera [index]] [--record]";  ///< Aide.
+
 namespace
 {
 
@@ -15,9 +18,6 @@ const ::std::string FLAG_IMAGE = "--image";    ///< Flag du mode image fixe.
 const ::std::string FLAG_VIDEO = "--video";    ///< Flag du mode fichier vidéo.
 const ::std::string FLAG_CAMERA = "--camera";  ///< Flag du mode caméra.
 const ::std::string FLAG_RECORD = "--record";  ///< Flag d'écriture du résultat
-
-const ::std::string USAGE_MESSAGE =
-  "Usage : line_detector [--image <chemin> | --video <chemin> | --camera [index]] [--record]";  ///< Aide.
 
 const ::std::string ERROR_CONFLICTING_MODES =
   "Modes exclusifs : un seul parmi --image, --video, --camera";  ///< Deux modes demandés.

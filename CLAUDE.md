@@ -1,18 +1,37 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Ce fichier fournit des repères pour travailler sur le code de ce dépôt.
 
 ## Présentation
 
-Détecteur de lignes de voie routière en C++17, basé sur OpenCV. Il fait passer
-une image dans un pipeline **vue de dessus (bird's eye view) + ajustement
-polynomial** capable de suivre des lignes **courbes**, et produit un **signal de
-pilotage** (offset latéral normalisé + rayon de courbure) destiné à maintenir un
-véhicule entre les lignes. Il vise une configuration avec caméra Raspberry Pi.
-`main.cpp` traite une image fixe, un fichier vidéo, ou un flux caméra en direct
-(`--image` / `--video` / `--camera`, cf. Compilation & exécution) — le lissage
-temporel (`LaneTracker`) et le passage à une sortie métrique restent au
-programme, cf. roadmap dans `docs/superpowers/specs/`.
+Bibliothèque de suivi de lignes au sol en C++17, basée sur OpenCV, pensée pour
+l'embarqué sur véhicule miniature autonome (caméra Raspberry Pi). En **usage
+nominal**, l'entrée est une image ou une vidéo et la sortie est un **signal de
+pilotage** (offset latéral normalisé + rayon de courbure) destiné à maintenir
+le véhicule entre les lignes — pas d'image annotée en sortie. Un second usage,
+dédié au **débug des algorithmes**, produit en plus des images annotées (cf.
+`--record` et `LINE_DETECTOR_DEBUG` plus bas). Le pipeline **vue de dessus
+(bird's eye view) + ajustement polynomial** permet de suivre des lignes
+**courbes**. `main.cpp` traite une image fixe, un fichier vidéo, ou un flux
+caméra en direct (`--image` / `--video` / `--camera`, cf. Compilation &
+exécution).
+
+**Portée volontairement générique** : cette lib doit rester utilisable par
+d'autres projets que celui de l'auteur, indépendamment de tout véhicule ou
+pipeline logiciel particulier. Elle est développée en vue d'un usage sur piste
+d'athlétisme (véhicule suiveur de ligne), et l'auteur prévoit à terme de
+l'intégrer dans un projet personnel de robot pacer, possiblement avec ROS2 —
+mais ni ce projet aval ni ROS2 ne doivent influencer les choix de conception
+de la lib (pas de dépendance ROS2, pas d'API pensée pour un seul
+consommateur). `line_detector_lib` reste indépendante de tout framework
+applicatif, cf. « Couche application ».
+
+**Mode vidéo incomplet** : le mode vidéo (fichier + caméra) lit et traite
+frame par frame, mais ne fait actuellement **aucun filtrage temporel** entre
+les frames (pas de lissage, pas de recherche autour du fit précédent) — le
+lissage temporel (`LaneTracker`) et le passage à une sortie métrique restent
+au programme, cf. roadmap dans `docs/superpowers/specs/` et section « Suite
+prévue ».
 
 ## Compilation & exécution
 
@@ -233,11 +252,29 @@ Distinction stricte, appliquée dans tout le pipeline :
   → **drapeau** (`LanePolynomial::valid`, `LaneModel::laneDetected`), jamais un
   assert. Un côté manquant est reconstruit par décalage (`LaneModel::reconstructed`
   passe à `true` — signal dégradé, à signaler au module de contrôle).
+- **Aléa d'environnement, hors pipeline** (uniquement dans `main.cpp` : arguments
+  CLI invalides, source introuvable ou indisponible, dossier de sortie
+  inutilisable, échec d'écriture du résultat) → **`EXIT_IF_FAILED`**
+  (`SmartAssert.h`, même fichier que `SMART_ASSERT` mais macro **distincte** et
+  volontairement différente : message humain sur `stderr` (pas de fichier:ligne
+  ni de condition brute — ce message s'adresse à l'utilisateur, pas au
+  développeur) puis `exit(EXIT_FAILURE)` propre, jamais `abort()`. Ce n'est pas
+  un bug à corriger mais une situation normale (fichier absent, disque plein,
+  caméra débranchée) à rapporter sans faire planter le programme. Réservé à
+  `main.cpp` : `line_detector_lib`/`line_detector_app` ne terminent jamais le
+  process elles-mêmes (cf. « Couche application » ci-dessous).
 
 ## Conventions & pièges
 
+- **Tout le code doit respecter `docs/coding_rules.md`** (nommage et
+  organisation des fichiers, style d'indentation, conventions de nommage et
+  d'écriture). C'est la référence de style du projet, à appliquer à tout code
+  nouveau ou modifié.
 - Le code, les commentaires et les messages de commit mélangent **français et
   anglais** ; suivre la langue du fichier environnant.
+- **Les commits doivent respecter le skill `/git-commit`** (message de type
+  commit conventionnel généré à partir du diff, staging intelligent par
+  regroupement logique).
 - Le **nouveau code qualifie explicitement `cv::`**. Certains en-têtes hérités
   contiennent encore `using namespace cv;`.
 - Les réglages ne sont plus des consts éparpillées : ils vivent dans **`LaneConfig`**.

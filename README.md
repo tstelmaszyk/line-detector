@@ -252,6 +252,15 @@ Par défaut `out/`, surchargeable par la variable d'environnement
 `LINE_DETECTOR_OUT`. Le programme crée le dossier lui-même si nécessaire (et
 uniquement s'il a quelque chose à y écrire).
 
+### Erreurs et code de sortie
+
+Une erreur d'exécution (arguments invalides, source introuvable, dossier de
+sortie inutilisable, échec d'écriture) affiche un message sur `stderr` et
+termine proprement le programme avec le code `EXIT_FAILURE` (1) — jamais de
+plantage : c'est un aléa d'environnement attendu, pas un bug. Un plantage
+signalerait au contraire un bug interne du pipeline (cf. `EXIT_IF_FAILED` vs
+`SMART_ASSERT` dans `CLAUDE.md`, section « Design by contract »).
+
 ### Cadence de la vidéo de sortie
 
 La vidéo annotée est toujours écrite à une cadence **fixe de 30 fps**, quelle que

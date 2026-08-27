@@ -24,3 +24,13 @@ TEST_CASE( "SMART_ASSERT ne fait rien quand la condition est vraie" )
 
   CHECK( 1 == reached );
 }
+
+TEST_CASE( "EXIT_IF_FAILED ne fait rien quand la condition est vraie" )
+{
+  int reached = 0;
+
+  EXIT_IF_FAILED( 1 + 1 == 2, "alea d'environnement inattendu" );
+  reached = 1;
+
+  CHECK( 1 == reached );
+}

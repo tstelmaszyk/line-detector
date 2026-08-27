@@ -14,6 +14,9 @@ enum e_source_kind
   SOURCE_KIND_COUNT       ///< Nombre d'éléments.
   };
 
+/// @brief Message d'aide affiché sur stderr en cas d'arguments invalides.
+extern const ::std::string USAGE_MESSAGE;
+
 /// @brief Chemin d'image utilisé quand aucun argument n'est fourni.
 static const ::std::string DEFAULT_IMAGE_PATH = "img_piste/img2.jpg";
 

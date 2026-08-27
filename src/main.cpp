@@ -119,17 +119,16 @@ int main( int argc, char** argv )
   // 1. Analyse des arguments.
   CliOptions options;
   const int parse_status = parse_arguments( argc, argv, options );
-  SMART_ASSERT( EXIT_SUCCESS == parse_status, "Erreur lors de l'analyse des arguments." );
+  EXIT_IF_FAILED( EXIT_SUCCESS == parse_status, options.error_message + "\n" + USAGE_MESSAGE );
 
   // 2. Ouverture de la source de frames.
   ::std::unique_ptr< FrameSource > frame_source = make_frame_source( options );
-  SMART_ASSERT( nullptr != frame_source, "Impossible d'ouvrir la source demandee." );
-
+  EXIT_IF_FAILED( nullptr != frame_source, "Impossible d'ouvrir la source demandee." );
 
   // 3. Premiere frame : elle definit la geometrie de tout le pipeline.
   ::cv::Mat first_frame;
   const bool first_read_ok = frame_source->read( first_frame );
-  SMART_ASSERT( first_read_ok, "Aucune frame lisible dans la source." );
+  EXIT_IF_FAILED( first_read_ok, "Aucune frame lisible dans la source." );
 
   // 4. Dossier de sortie et traces de debug.
   const char* output_dir_env = ::std::getenv( OUTPUT_DIR_ENV_VAR );
@@ -155,7 +154,7 @@ int main( int argc, char** argv )
     ::std::filesystem::create_directories( output_dir, create_directory_error );
 
     const bool output_dir_usable = ::std::filesystem::is_directory( output_dir, create_directory_error );
-    SMART_ASSERT( output_dir_usable, "Impossible de creer ou d'utiliser le dossier de sortie" );
+    EXIT_IF_FAILED( output_dir_usable, "Impossible de creer ou d'utiliser le dossier de sortie : " + output_dir );
     }
 
   ::std::unique_ptr< ImageSink > debug_sink;
@@ -217,14 +216,15 @@ int main( int argc, char** argv )
   RunStats stats;
   const int run_status = runner.run( first_frame, stats );
 
-  SMART_ASSERT( EXIT_SUCCESS == run_status, "Aucune frame traitee." );
+  EXIT_IF_FAILED( EXIT_SUCCESS == run_status, "Aucune frame traitee." );
 
   // 9. Verification des sorties.
   const bool image_failed = ( nullptr != image_writer ) && image_writer->has_failed();
   const bool video_failed = ( nullptr != video_writer ) && video_writer->has_failed();
 
-  SMART_ASSERT( !image_failed, "Impossible d'ecrire l'image de sortie" );
-  SMART_ASSERT( !video_failed, "Impossible d'ecrire la video de sortie" );
+  EXIT_IF_FAILED( !image_failed,
+                  "Impossible d'ecrire l'image de sortie : " + output_dir + PATH_SEPARATOR + OUTPUT_IMAGE_NAME );
+  EXIT_IF_FAILED( !video_failed, "Impossible d'ecrire la video de sortie : " + video_path );
 
   // 10. Resume.
   const double total_ms = stats.compute_ms + stats.render_ms;
