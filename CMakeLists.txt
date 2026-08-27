@@ -20,7 +20,7 @@ set(LANE_SOURCES
 )
 
 add_library( line_detector_lib STATIC ${LANE_SOURCES} )
-target_include_directories( line_detector_lib PUBLIC ${CMAKE_SOURCE_DIR}/src/lib ${OpenCV_INCLUDE_DIRS} )
+target_include_directories( line_detector_lib PUBLIC ${CMAKE_SOURCE_DIR}/src/lib ${CMAKE_SOURCE_DIR}/src/common ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries( line_detector_lib PUBLIC ${OpenCV_LIBS} )
 
 # --- Bibliotheque applicative : capture, boucle, sorties dev/test ---

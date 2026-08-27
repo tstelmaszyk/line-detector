@@ -200,6 +200,14 @@ Deux cibles CMake matérialisent la frontière :
   `main.cpp` seul) **et** `line_detector_tests` linkent, pour garantir qu'ils
   exercent exactement le même code.
 
+Trois en-têtes purement utilitaires — `VideoCaracteristics.h`, `projectTypes.h`,
+`SmartAssert.h` — sont utilisés à la fois par `line_detector_lib` et
+`line_detector_app` (et par `main.cpp`) ; ils vivent dans **`src/common/`**,
+pas dans `src/lib/`, pour rendre cette frontière visible dans l'arborescence.
+`src/common/` n'a pas de cible CMake propre (en-têtes seuls, sans `.cpp`) : il
+est simplement ajouté aux `target_include_directories` de `line_detector_lib`,
+et propagé à `line_detector_app` par l'édition de liens `PUBLIC` existante.
+
 Composants de `line_detector_app` :
 
 - **`CliOptions` / `parse_arguments`** (`CliOptions.h/.cpp`) — analyse pure des
