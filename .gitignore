@@ -2,6 +2,7 @@
 /build
 /build-linux
 /build-test
+/data
 
 # Sorties du programme.
 /out
@@ -14,5 +15,5 @@ img_piste/
 # Fichier parasite macOS.
 .DS_Store
 
-# Reglages locaux Claude Code (permissions personnelles) — non versionnes.
+# Reglages locaux d'outils dev (permissions personnelles) — non versionnes.
 .claude/settings.local.json
