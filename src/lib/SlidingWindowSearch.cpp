@@ -152,21 +152,26 @@ LanePixels SlidingWindowSearch::search( const ::cv::Mat& p_bev ) const
       }
     }
 
-  // Trace debug : pixels gauche en rouge, droite en bleu.
-  ::cv::Mat debug_image;
-  ::cv::cvtColor( p_bev, debug_image, ::cv::COLOR_GRAY2BGR );
-
-  for ( const ::cv::Point& point : pixels.left )
+  // Trace debug : pixels gauche en rouge, droite en bleu. Construction sautee
+  // si aucun sink ne consomme le resultat (cout cvtColor + ecriture pixel par
+  // pixel non negligeable, payee sinon a chaque frame meme sans debug).
+  if ( m_debug_sink.is_enabled() )
     {
-    debug_image.at< ::cv::Vec3b >( point ) = COLOR_LEFT_PIXELS;
-    }
+    ::cv::Mat debug_image;
+    ::cv::cvtColor( p_bev, debug_image, ::cv::COLOR_GRAY2BGR );
 
-  for ( const ::cv::Point& point : pixels.right )
-    {
-    debug_image.at< ::cv::Vec3b >( point ) = COLOR_RIGHT_PIXELS;
-    }
+    for ( const ::cv::Point& point : pixels.left )
+      {
+      debug_image.at< ::cv::Vec3b >( point ) = COLOR_LEFT_PIXELS;
+      }
 
-  m_debug_sink.save( "debug_03_windows.jpg", debug_image );
+    for ( const ::cv::Point& point : pixels.right )
+      {
+      debug_image.at< ::cv::Vec3b >( point ) = COLOR_RIGHT_PIXELS;
+      }
+
+    m_debug_sink.save( "debug_03_windows.jpg", debug_image );
+    }
 
   return pixels;
 }
