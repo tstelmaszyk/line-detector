@@ -227,9 +227,9 @@ int main( int argc, char** argv )
   EXIT_IF_FAILED( !video_failed, "Impossible d'ecrire la video de sortie : " + video_path );
 
   // 10. Resume.
-  const double total_ms = stats.compute_ms + stats.render_ms;
-  const double average_ms = total_ms / static_cast< double >( stats.frame_count );
-  const double average_render_ms = stats.render_ms / static_cast< double >( stats.frame_count );
+  const DurationMs total_ms = stats.compute_ms + stats.render_ms;
+  const DurationMs average_ms = total_ms / static_cast< double >( stats.frame_count );
+  const DurationMs average_render_ms = stats.render_ms / static_cast< double >( stats.frame_count );
   const double frames_per_second = MILLISECONDS_PER_SECOND / average_ms;
 
   ::std::cerr << " Frames : " << stats.frame_count

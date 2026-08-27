@@ -29,8 +29,8 @@ class FrameObserver
     virtual void on_frame( FrameIndex p_frame_index,
                            const LaneModel& p_model,
                            const ::cv::Mat& p_annotated_frame,
-                           double p_compute_ms,
-                           double p_render_ms ) = 0;
+                           DurationMs p_compute_ms,
+                           DurationMs p_render_ms ) = 0;
 
     /// @brief Indique si l'observateur est dans un état d'échec définitif.
     /// @return false par défaut ; les observateurs qui écrivent en sortie le redéfinissent.

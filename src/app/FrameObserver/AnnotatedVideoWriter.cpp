@@ -33,8 +33,8 @@ AnnotatedVideoWriter::~AnnotatedVideoWriter()
 void AnnotatedVideoWriter::on_frame( FrameIndex p_frame_index,
                                      const LaneModel& p_model,
                                      const ::cv::Mat& p_annotated_frame,
-                                     double p_compute_ms,
-                                     double p_render_ms )
+                                     DurationMs p_compute_ms,
+                                     DurationMs p_render_ms )
 {
   (void) p_frame_index;
   (void) p_model;

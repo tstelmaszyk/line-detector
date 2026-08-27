@@ -44,8 +44,8 @@ class AnnotatedVideoWriter : public FrameObserver
     void on_frame( FrameIndex p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_compute_ms,
-                   double p_render_ms ) override;
+                   DurationMs p_compute_ms,
+                   DurationMs p_render_ms ) override;
 
     /// @brief Indique si l'ouverture a échoué ou si une frame vide a été reçue.
     /// @return true en cas d'échec.

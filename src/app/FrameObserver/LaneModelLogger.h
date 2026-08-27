@@ -29,8 +29,8 @@ class LaneModelLogger : public FrameObserver
     void on_frame( FrameIndex p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
-                   double p_compute_ms,
-                   double p_render_ms ) override;
+                   DurationMs p_compute_ms,
+                   DurationMs p_render_ms ) override;
 
     /// @brief Le log CSV n'exploite pas l'image annotée.
     /// @return false.

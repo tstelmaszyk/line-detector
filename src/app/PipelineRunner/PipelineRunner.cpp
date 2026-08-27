@@ -16,12 +16,12 @@ const double MICROSECONDS_PER_MILLISECOND = 1000.0;  ///< Conversion µs -> ms.
 /// @brief Duree ecoulee depuis un instant de depart, en millisecondes.
 /// @param p_start_time Instant de depart.
 /// @return Duree ecoulee (millisecondes).
-double elapsed_ms_since( const ::std::chrono::steady_clock::time_point& p_start_time )
+DurationMs elapsed_ms_since( const ::std::chrono::steady_clock::time_point& p_start_time )
   {
   const ::std::chrono::steady_clock::time_point end_time = ::std::chrono::steady_clock::now();
   const ::std::chrono::microseconds elapsed_us =
     ::std::chrono::duration_cast< ::std::chrono::microseconds >( end_time - p_start_time );
-  const double elapsed_ms = static_cast< double >( elapsed_us.count() ) / MICROSECONDS_PER_MILLISECOND;
+  const DurationMs elapsed_ms = static_cast< DurationMs >( elapsed_us.count() ) / MICROSECONDS_PER_MILLISECOND;
   return elapsed_ms;
   }
 
@@ -59,10 +59,10 @@ bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, FrameIndex p_frame
 
   const LaneModel model = m_detector.compute( p_frame );
 
-  const double compute_ms = elapsed_ms_since( compute_start );
+  const DurationMs compute_ms = elapsed_ms_since( compute_start );
 
   ::cv::Mat annotated_frame;
-  double render_ms = 0.0;
+  DurationMs render_ms = 0.0;
 
   if ( m_render_needed )
     {
