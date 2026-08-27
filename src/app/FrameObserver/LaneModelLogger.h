@@ -8,6 +8,7 @@
 #include <ostream>
 
 #include "FrameObserver/FrameObserver.h"
+#include "projectTypes.h"
 
 struct LaneModel;
 
@@ -25,7 +26,7 @@ class LaneModelLogger : public FrameObserver
     /// @param p_annotated_frame Image annotée (inutilisée ici).
     /// @param p_compute_ms      Durée du calcul de la frame (millisecondes).
     /// @param p_render_ms       Durée du rendu de la frame (millisecondes).
-    void on_frame( int p_frame_index,
+    void on_frame( FrameIndex p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
                    double p_compute_ms,

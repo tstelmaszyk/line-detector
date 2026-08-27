@@ -30,7 +30,7 @@ LaneModelLogger::LaneModelLogger( ::std::ostream& p_output_stream )
   m_output_stream << ::std::fixed << ::std::setprecision( CSV_FIELD_PRECISION );
 }
 
-void LaneModelLogger::on_frame( int p_frame_index,
+void LaneModelLogger::on_frame( FrameIndex p_frame_index,
                                 const LaneModel& p_model,
                                 const ::cv::Mat& p_annotated_frame,
                                 double p_compute_ms,

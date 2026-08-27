@@ -53,7 +53,7 @@ PipelineRunner::PipelineRunner( FrameSource& p_frame_source,
     }
 }
 
-bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats )
+bool PipelineRunner::process_frame( const ::cv::Mat& p_frame, FrameIndex p_frame_index, RunStats& p_stats )
 {
   const ::std::chrono::steady_clock::time_point compute_start = ::std::chrono::steady_clock::now();
 
@@ -110,7 +110,7 @@ int PipelineRunner::run( const ::cv::Mat& p_first_frame, RunStats& p_stats )
 {
   ::cv::Mat current_frame = p_first_frame;
   ::cv::Mat next_frame;
-  int frame_index = 0;
+  FrameIndex frame_index = 0;
 
   while ( true )
     {

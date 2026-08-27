@@ -9,6 +9,7 @@
 #include <string>
 
 #include "FrameObserver/FrameObserver.h"
+#include "projectTypes.h"
 
 struct LaneModel;
 
@@ -40,7 +41,7 @@ class AnnotatedVideoWriter : public FrameObserver
     /// @param p_annotated_frame Image annotée à écrire.
     /// @param p_compute_ms      Durée du calcul (inutilisée ici).
     /// @param p_render_ms       Durée du rendu (inutilisée ici).
-    void on_frame( int p_frame_index,
+    void on_frame( FrameIndex p_frame_index,
                    const LaneModel& p_model,
                    const ::cv::Mat& p_annotated_frame,
                    double p_compute_ms,

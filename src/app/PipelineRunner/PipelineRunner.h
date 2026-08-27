@@ -12,6 +12,7 @@
 #include "FrameObserver/FrameObserver.h"
 #include "FrameSource/FrameSource.h"
 #include "RunStats/RunStats.h"
+#include "projectTypes.h"
 
 /// @brief Possède la boucle de traitement d'un flux de frames.
 ///
@@ -44,7 +45,7 @@ class PipelineRunner
     /// @param p_frame_index Index de la frame.
     /// @param p_stats       Statistiques mises à jour.
     /// @return true si un observateur signale un échec définitif après cette frame.
-    bool process_frame( const ::cv::Mat& p_frame, int p_frame_index, RunStats& p_stats );
+    bool process_frame( const ::cv::Mat& p_frame, FrameIndex p_frame_index, RunStats& p_stats );
 
     FrameSource& m_frame_source;                      ///< Source de frames.
     const DetectLines& m_detector;                    ///< Pipeline de détection.

@@ -14,7 +14,7 @@ ResultImageWriter::ResultImageWriter( ImageSink& p_image_sink, ::std::string p_f
 {
 }
 
-void ResultImageWriter::on_frame( int p_frame_index,
+void ResultImageWriter::on_frame( FrameIndex p_frame_index,
                                   const LaneModel& p_model,
                                   const ::cv::Mat& p_annotated_frame,
                                   double p_compute_ms,

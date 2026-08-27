@@ -30,7 +30,7 @@ AnnotatedVideoWriter::~AnnotatedVideoWriter()
   m_video_writer.release();
 }
 
-void AnnotatedVideoWriter::on_frame( int p_frame_index,
+void AnnotatedVideoWriter::on_frame( FrameIndex p_frame_index,
                                      const LaneModel& p_model,
                                      const ::cv::Mat& p_annotated_frame,
                                      double p_compute_ms,

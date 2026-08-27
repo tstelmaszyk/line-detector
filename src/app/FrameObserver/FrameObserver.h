@@ -5,6 +5,8 @@
 
 #include <opencv2/core.hpp>
 
+#include "projectTypes.h"
+
 struct LaneModel;
 
 /// @brief Reçoit le résultat de détection d'une frame.
@@ -24,7 +26,7 @@ class FrameObserver
     ///                          n'a déclaré en avoir besoin.
     /// @param p_compute_ms      Durée du calcul de la frame (millisecondes).
     /// @param p_render_ms       Durée du rendu de la frame (0 si non rendu).
-    virtual void on_frame( int p_frame_index,
+    virtual void on_frame( FrameIndex p_frame_index,
                            const LaneModel& p_model,
                            const ::cv::Mat& p_annotated_frame,
                            double p_compute_ms,
