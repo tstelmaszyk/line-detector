@@ -13,3 +13,6 @@ typedef ::std::int32_t FrameIndex;
 
 /// @brief Durée exprimée en millisecondes (calcul, rendu).
 typedef double DurationMs;
+
+/// @brief Distance ou écart exprimé en pixels BEV (peut être négatif).
+typedef double PixelOffset;

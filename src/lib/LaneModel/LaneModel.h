@@ -4,6 +4,7 @@
 /// @brief Résultat de la détection : modèle de voie + signal de pilotage.
 
 #include "LanePolynomial/LanePolynomial.h"
+#include "projectTypes.h"
 
 /// @brief Résultat complet : deux polynômes de voie (pixels BEV) + signal de
 /// pilotage rempli par LaneGeometry. Consommé plus tard par le module de contrôle.
@@ -14,7 +15,7 @@ struct LaneModel
   bool lane_detected = false;        ///< true si une voie exploitable est détectée.
   bool reconstructed = false;        ///< true si un côté a été reconstruit (signal dégradé).
 
-  double lateral_offset_px = 0.0;    ///< Écart véhicule↔centre voie au bas de l'image.
+  PixelOffset lateral_offset_px = 0.0;  ///< Écart véhicule↔centre voie au bas de l'image.
   double normalized_offset = 0.0;    ///< offset / demi-largeur ; <0 = décalé à gauche.
   double curvature_radius_px = 0.0;  ///< Rayon de courbure (grand = quasi droit).
   };

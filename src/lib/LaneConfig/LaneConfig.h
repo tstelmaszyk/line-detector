@@ -5,6 +5,8 @@
 
 #include <opencv2/core.hpp>
 
+#include "projectTypes.h"
+
 /// @brief Regroupe tous les réglages du pipeline (seuillage, calibration BEV,
 /// fenêtres glissantes). Injecté par valeur const dans chaque composant. Les
 /// valeurs par défaut ci-dessous sont la définition centralisée des constantes
@@ -42,5 +44,5 @@ struct LaneConfig
   float histogram_band_ratio = 0.25f;     ///< Fraction basse de H pour l'histogramme de base.
 
   // --- Reconstruction / sanité (LaneGeometry) ---
-  double default_lane_width_px = 0.0;     ///< 0 = pas de reconstruction du côté manquant.
+  PixelOffset default_lane_width_px = 0.0;  ///< 0 = pas de reconstruction du côté manquant.
   };
